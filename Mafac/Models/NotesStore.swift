@@ -95,21 +95,24 @@ final class NotesStore: ObservableObject {
     /// Tracks whether `folderURL` currently has an open security scope, so
     /// every start is matched by exactly one stop. See the type-level doc
     /// comment above for the full lifecycle story.
-    private var isAccessingSecurityScope = false
+    ///
+    /// `nonisolated(unsafe)` because `deinit` needs to read it to balance
+    /// the scope, and `deinit` isn't actor-isolated. Safe in practice: by
+    /// the time `deinit` runs there are no other references to `self`, so
+    /// there's no concurrent access to race with.
+    private nonisolated(unsafe) var isAccessingSecurityScope = false
+
+    /// Mirrors `folderURL` for `deinit`'s sake — `folderURL` itself is
+    /// `@Published` and MainActor-isolated, which `deinit` can't touch.
+    /// Kept in sync everywhere `folderURL` is assigned.
+    private nonisolated(unsafe) var lastKnownFolderURL: URL?
 
     init() {
         restoreFolderFromBookmark()
     }
 
     deinit {
-        // NotesStore is @MainActor and folderURL/isAccessingSecurityScope
-        // are only ever mutated on the main actor, but `deinit` itself
-        // isn't actor-isolated, so read the values into locals first
-        // rather than touching `self` properties from a possibly-different
-        // context.
-        let accessing = isAccessingSecurityScope
-        let url = folderURL
-        if accessing, let url {
+        if isAccessingSecurityScope, let url = lastKnownFolderURL {
             url.stopAccessingSecurityScopedResource()
         }
     }
@@ -172,12 +175,14 @@ final class NotesStore: ObservableObject {
 
         guard url.startAccessingSecurityScopedResource() else {
             folderURL = nil
+            lastKnownFolderURL = nil
             folderAccessError = NotesStoreError.folderAccessDenied.errorDescription
             notes = []
             return
         }
         isAccessingSecurityScope = true
         folderURL = url
+        lastKnownFolderURL = url
         folderAccessError = nil
 
         if isFreshPick {

@@ -129,6 +129,16 @@ struct NoteEditorView: View {
     /// triggered it.
     var onShortcutUsed: (String) -> Void = { _ in }
 
+    /// Whether the math key guide (cheat sheet) is currently visible, so
+    /// the toolbar toggle button can reflect its state — mirrors
+    /// ContentView's `isCheatSheetVisible`.
+    var isCheatSheetVisible: Bool = false
+
+    /// Forwarded up to ContentView, which owns the cheat sheet's
+    /// shown/hidden override — same action as the hidden ⌘/ shortcut, now
+    /// with a discoverable toolbar button too.
+    var onToggleCheatSheet: () -> Void = {}
+
     @StateObject private var textRegistry = TextBlockRegistry()
 
     var body: some View {
@@ -164,6 +174,27 @@ struct NoteEditorView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
+                    insertMathBlockAtCursor()
+                } label: {
+                    Label("Insert Math Block", systemImage: "x.squareroot")
+                }
+                .help("Insert a math block at the cursor (\u{2318}M)")
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    onToggleCheatSheet()
+                } label: {
+                    Label(
+                        isCheatSheetVisible ? "Hide Math Key Guide" : "Show Math Key Guide",
+                        systemImage: isCheatSheetVisible ? "sidebar.right" : "sidebar.squares.right"
+                    )
+                }
+                .help("Toggle the math shortcut key guide (\u{2318}/)")
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Button {
                     copyNoteAsMarkdown()
                 } label: {
                     Label("Copy Note as Markdown", systemImage: "doc.on.clipboard")
@@ -183,6 +214,12 @@ struct NoteEditorView: View {
                 handle: textRegistry.handle(for: block.id)
             )
             .frame(minHeight: 32, idealHeight: 60, maxHeight: 220)
+            .background(Color(nsColor: .textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
 
         case .math(let latex):
             VStack(alignment: .leading, spacing: 6) {

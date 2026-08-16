@@ -44,7 +44,7 @@ struct MathBlockView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         // Manual TextKit stack so we control exactly which NSTextView
         // subclass sits on top of it.
-        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: .greatestFiniteMagnitude))
+        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
         textContainer.widthTracksTextView = true
         textContainer.heightTracksTextView = false
 
@@ -59,13 +59,13 @@ struct MathBlockView: NSViewRepresentable {
         textView.shortcutTable = shortcutTable
         textView.onLatexChanged = onLatexChange
         textView.onShortcutUsed = onShortcutUsed
-        textView.font = .monospacedSystemFont(ofSize: 16, weight: .regular)
-        textView.textColor = .labelColor
+        textView.font = NSFont.monospacedSystemFont(ofSize: 16, weight: .regular)
+        textView.textColor = NSColor.labelColor
         textView.isEditable = true
         textView.isSelectable = true
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
-        textView.autoresizingMask = [.width]
+        textView.autoresizingMask = [NSView.AutoresizingMask.width]
         textView.textContainerInset = NSSize(width: 10, height: 10)
         textView.delegate = context.coordinator
 

@@ -178,7 +178,9 @@ struct ContentView: View {
                         document: openDocumentBinding,
                         focusedBlockID: $focusedBlockID,
                         shortcutTable: shortcutTable,
-                        onShortcutUsed: { id in flashRecentlyUsed(id) }
+                        onShortcutUsed: { id in flashRecentlyUsed(id) },
+                        isCheatSheetVisible: isCheatSheetVisible,
+                        onToggleCheatSheet: { toggleCheatSheet() }
                     )
                 } else if shortcutTable == nil {
                     Text("Failed to load ShortcutTable.json from the app bundle.")

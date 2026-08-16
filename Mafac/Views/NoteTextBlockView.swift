@@ -56,7 +56,7 @@ struct NoteTextBlockView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: .greatestFiniteMagnitude))
+        let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
         textContainer.widthTracksTextView = true
         textContainer.heightTracksTextView = false
 
@@ -78,13 +78,13 @@ struct NoteTextBlockView: NSViewRepresentable {
         textView.smartInsertDeleteEnabled = false
         textView.isRichText = false
         textView.allowsUndo = true
-        textView.font = .systemFont(ofSize: 14)
-        textView.textColor = .labelColor
+        textView.font = NSFont.systemFont(ofSize: 14)
+        textView.textColor = NSColor.labelColor
         textView.isEditable = true
         textView.isSelectable = true
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
-        textView.autoresizingMask = [.width]
+        textView.autoresizingMask = [NSView.AutoresizingMask.width]
         textView.textContainerInset = NSSize(width: 6, height: 8)
         textView.drawsBackground = false
         textView.delegate = context.coordinator
