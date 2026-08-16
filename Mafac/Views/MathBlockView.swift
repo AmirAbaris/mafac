@@ -89,6 +89,21 @@ struct MathBlockView: NSViewRepresentable {
         textView.shortcutTable = shortcutTable
         textView.onLatexChanged = onLatexChange
         textView.onShortcutUsed = onShortcutUsed
+
+        // Phase 3 addition: focus-follows-state. `isFocused` was purely an
+        // outbound signal in Phase 1/2 (text view -> binding, via the
+        // coordinator's textDidBeginEditing/EndEditing below); Phase 3
+        // needs the reverse too, so NoteEditorView can hand keyboard focus
+        // to a freshly-inserted math block (e.g. right after a ⌘M split)
+        // by setting `isFocused` from outside. Guarded on both sides —
+        // only acts when there's an actual mismatch to resolve — so it
+        // never fights a live, user-driven focus change (e.g. clicking
+        // into a different block resigns this text view first responder
+        // the normal AppKit way; this block doesn't fight that) or loops
+        // back on itself once satisfied.
+        if isFocused, textView.window?.firstResponder !== textView {
+            textView.window?.makeFirstResponder(textView)
+        }
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {

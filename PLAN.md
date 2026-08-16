@@ -258,25 +258,102 @@ key does while a math block is focused.
 
 ---
 
-### Phase 3 — Notes: text + embedded math blocks
+### ✅ Phase 3 — Notes: text + embedded math blocks
 **Goal:** Turn the standalone math block into part of a real note document
 with surrounding plain text.
 
-- Build `NoteEditorView`: a text editor (SwiftUI `TextEditor` or custom
-  `NSTextView`) that supports inserting a math block inline at the cursor
-  (e.g. via a `⌘M` shortcut or a `/math` slash command).
-- Decide and implement the underlying document model: likely an ordered
-  array of blocks (`.text(String)` / `.math(latex: String)`), rather than
-  trying to inline WKWebViews inside a single NSTextView's text storage
-  (much simpler to reason about and render).
-- Render each `.text` block as normal editable text and each `.math` block
-  as the `MathBlockView` from Phase 1, laid out top-to-bottom in the note.
-- Basic note-level UI: click to focus a text region and type normally,
-  click into a math block to enter shortcut-mode editing, click outside to
-  exit.
+**What's done:**
+
+- `Models/NoteDocument.swift`: `NoteBlock` (an `Identifiable` struct — a
+  stable `UUID` plus `content: NoteBlockContent`, where `NoteBlockContent`
+  is `.text(String)` / `.math(latex: String)`) and `NoteDocument` (a title
+  plus `[NoteBlock]`). Every block gets a stable id up front, not just math
+  blocks, since `ForEach` needs stable identity for *all* blocks the moment
+  the array can split (a ⌘M mid-text press turns one text block into
+  three). In memory only — no `Codable` yet, that's Phase 4.
+- `Views/NoteTextBlockView.swift`: a new, minimal `NSViewRepresentable`
+  wrapping a plain `NSTextView` for `.text` blocks — deliberately not
+  `MathBlockTextView` (no shortcut interpretation). Wraps `NSTextView`
+  rather than using SwiftUI's `TextEditor` for two reasons: it needs
+  on-demand cursor position for the ⌘M split, and it needs focus drivable
+  from outside (to hand focus to a freshly-inserted math block), neither
+  of which macOS 13's `TextEditor(text:)` exposes.
+- `Views/NoteEditorView.swift`: renders `document.blocks` top-to-bottom —
+  `.text` via `NoteTextBlockView`, `.math` via the existing `MathBlockView`
+  (Phase 1, reused unmodified in its own logic — only a small focus-follows
+  -state addition landed in `updateNSView`, see below) paired with
+  `MathRenderView` (Phase 0), exactly as ContentView wired the single demo
+  block in Phases 1-2, now once per math block.
+- Focus coordination: a single `Binding<UUID?>` (`focusedBlockID`, owned by
+  `ContentView`, threaded down) is the one source of truth for which block
+  — text or math — currently has keyboard focus. Not `@FocusState`, because
+  both block views are `NSViewRepresentable`s that track their own AppKit
+  first-responder state; a per-block `Binding<Bool>` is derived from the
+  shared `UUID?` via the standard "one shared selection, N item bindings"
+  pattern (`focusBinding(for:)` in `NoteEditorView`), which is what makes a
+  *dynamic*, growing/shrinking/splitting block array work — nothing here
+  depends on a fixed enum of block identities.
+- `MathBlockView.swift`: `isFocused` was outbound-only in Phase 1/2 (text
+  view → binding). Phase 3 adds the inbound direction in `updateNSView` —
+  if `isFocused` is externally set true and the text view isn't first
+  responder yet, it claims it via `makeFirstResponder`. Same addition made
+  fresh in `NoteTextBlockView`. This is what lets ⌘M hand keyboard focus to
+  the block it just created.
+- ⌘M: a hidden `Button` with `.keyboardShortcut("m", modifiers: .command)`
+  in `NoteEditorView` (same technique Phase 2 used for ⌘/, which reliably
+  wins over the default Window > Minimize menu item, also bound to ⌘M,
+  because AppKit resolves a SwiftUI button's key equivalent while walking
+  the view hierarchy — before it would fall through to the main menu).
+  While a `.text` block has focus, it reads that block's live cursor
+  position (via `TextBlockRegistry`, a small side-table of weak
+  `NSTextView` references keyed by block id — needed because the handler
+  runs at the note level, outside any one block's own view) and splits it
+  into before-text / new-math / after-text, replacing one block with three
+  fresh ids. If nothing is focused, or a math block is, it appends a new
+  math block (plus a trailing empty text block) at the end instead.
+- `CheatSheetView` visibility (`ContentView.isMathBlockFocused`) now checks
+  that the focused block specifically `isMath`, not just "something has
+  focus" — satisfies the brief's point 5 without any extra plumbing beyond
+  what `focusedBlockID` + `document.blocks` already provide.
+- `ContentView.swift` now hosts one `NoteDocument` via `NoteEditorView`,
+  replacing the Phase 1-2 single-demo-block layout; the cheat-sheet sidebar
+  is unchanged in behavior (`⌘/`, `@AppStorage` override) but its automatic
+  branch now follows the note-wide focused-math signal above.
+
+**Known limitations (by design, in scope for later phases/polish):**
+
+- No file persistence — `NoteDocument` lives only in memory for the
+  duration of the app run. **Phase 4 (local file persistence) has not been
+  started.** Quitting the app loses the note.
+- Clicking in genuinely empty space outside every block (not on any text
+  or math view) doesn't explicitly resign focus — this relies on AppKit's
+  default behavior of leaving the current first responder alone when a
+  click lands on non-interactive space, same as Phases 1-2 already did for
+  the single block. A dedicated "click outside deactivates" background
+  tap-catcher was not added.
+- Text blocks have a fixed height range (`minHeight: 32` / `maxHeight:
+  220`) with internal scrolling rather than auto-growing to fit content —
+  simplest option that keeps `NoteTextBlockView` a plain `NSTextView` in an
+  `NSScrollView` without implementing intrinsic-content-size tracking.
+  Fine for short paragraphs; a long paragraph scrolls inside its own block
+  instead of expanding the block.
+- No block deletion/merging UX yet (e.g. backspacing at the start of an
+  empty text block doesn't merge it into the previous block, and an empty
+  text block left behind by ⌘M isn't auto-removed) — the document can
+  accumulate empty text blocks through normal use; harmless but not
+  cleaned up.
+- As with Phase 1/2, this was written without a working Xcode/xcodebuild
+  in the environment — reasoned through carefully against documented
+  AppKit/SwiftUI focus and responder-chain behavior (including the ⌘M vs.
+  Window-menu-Minimize key-equivalent resolution order) but not exercised
+  interactively. Worth a careful pass in Xcode before relying on it,
+  especially the ⌘M split and focus hand-off.
 - **Exit criteria:** A single note can contain multiple paragraphs of plain
   text interleaved with multiple math blocks, all independently editable,
-  and it all lives in memory as one coherent document.
+  and it all lives in memory as one coherent document. Met — see the block
+  array walkthrough in this phase's implementation notes / commit message
+  for a traced example (type text → ⌘M → type a shortcut sequence → click
+  back into text → keep typing).
 
 ---
 

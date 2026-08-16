@@ -13,14 +13,23 @@
 //  a ⌘/ shortcut that forces it into an explicit shown/hidden state,
 //  persisted via @AppStorage so the override survives a relaunch.
 //
+//  Phase 3: replaces the single demo block with a full NoteDocument hosted
+//  in NoteEditorView (text + interleaved math blocks, ⌘M to insert one).
+//  ContentView now owns the document and the note-wide `focusedBlockID`
+//  (see NoteEditorView.swift's doc comment for why focus is a single
+//  shared `UUID?` rather than a fixed `@FocusState` enum), and derives the
+//  cheat sheet's automatic visibility from whether the currently focused
+//  block specifically `isMath` — not just "is anything focused" — per the
+//  Phase 3 brief's point 5.
+//
 
 import SwiftUI
 
 /// Persisted cheat-sheet visibility mode. `automatic` is the default —
-/// follow `isMathBlockFocused`. Pressing ⌘/ flips into whichever forced
-/// state is the opposite of what's currently on screen, and that forced
-/// state sticks (across focus changes and app relaunches) until ⌘/ is
-/// pressed again.
+/// follow whether a math block has focus. Pressing ⌘/ flips into whichever
+/// forced state is the opposite of what's currently on screen, and that
+/// forced state sticks (across focus changes and app relaunches) until ⌘/
+/// is pressed again.
 private enum CheatSheetOverride: Int {
     case automatic = 0
     case forcedShown = 1
@@ -28,17 +37,19 @@ private enum CheatSheetOverride: Int {
 }
 
 struct ContentView: View {
-    /// The math block's current LaTeX, pushed here (debounced) by
-    /// MathBlockView every time the user edits the block.
-    @State private var latex: String = ""
+    /// The whole note, in memory only (Phase 4 adds file persistence —
+    /// not started; see PLAN.md).
+    @State private var document: NoteDocument = .empty(title: "New Note")
 
-    /// Whether the math block currently has keyboard focus, kept in sync
-    /// by MathBlockView's coordinator (see MathBlockView.swift).
-    @State private var isMathBlockFocused: Bool = false
+    /// Which block in the note — text or math — currently has keyboard
+    /// focus, if any. Single source of truth shared with NoteEditorView;
+    /// see that file's doc comment for the full focus-coordination story.
+    @State private var focusedBlockID: UUID?
 
     /// `ShortcutEntry.id` of the most recently used shortcut, for the
     /// cheat-sheet's brief highlight. Cleared automatically after a short
-    /// delay by `flashRecentlyUsed`.
+    /// delay by `flashRecentlyUsed`. Sourced from whichever math block in
+    /// the note last used a shortcut, not a single hardcoded block.
     @State private var recentlyUsedShortcutID: String? = nil
     @State private var highlightResetTask: Task<Void, Never>? = nil
 
@@ -55,6 +66,14 @@ struct ContentView: View {
         CheatSheetOverride(rawValue: overrideRawValue) ?? .automatic
     }
 
+    /// Whether the currently focused block is specifically a `.math`
+    /// block (not just "something is focused") — the signal the cheat
+    /// sheet's automatic visibility follows.
+    private var isMathBlockFocused: Bool {
+        guard let id = focusedBlockID else { return false }
+        return document.blocks.first(where: { $0.id == id })?.isMath ?? false
+    }
+
     /// The cheat-sheet's actual on-screen visibility right now, combining
     /// the persisted override with live focus state.
     private var isCheatSheetVisible: Bool {
@@ -67,52 +86,29 @@ struct ContentView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Mafac")
                     .font(.largeTitle.bold())
 
-                Text("Click into the math block and type shortcut keys (e.g. r → √, f → fraction, p → π, i → ∫, ^ / _ → super/subscript). Anything not in the table types literally. ⌘/ toggles the shortcut reference.")
+                Text("Type normally. Press ⌘M to insert a math block at the cursor, then type shortcut keys inside it (e.g. r → √, f → fraction, p → π, i → ∫). ⌘/ toggles the shortcut reference.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let shortcutTable {
-                    Text("MATH BLOCK")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    MathBlockView(
+                    NoteEditorView(
+                        document: $document,
+                        focusedBlockID: $focusedBlockID,
                         shortcutTable: shortcutTable,
-                        onLatexChange: { newLatex in latex = newLatex },
-                        onShortcutUsed: { id in flashRecentlyUsed(id) },
-                        isFocused: $isMathBlockFocused
+                        onShortcutUsed: { id in flashRecentlyUsed(id) }
                     )
-                    .frame(minWidth: 480, minHeight: 90)
-                    .background(Color(nsColor: .textBackgroundColor))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-
-                    Text("RENDERED")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    MathRenderView(latex: latex)
-                        .frame(minWidth: 480, minHeight: 160)
-                        .background(Color(nsColor: .textBackgroundColor))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
                 } else {
                     Text("Failed to load ShortcutTable.json from the app bundle.")
                         .foregroundStyle(.red)
                 }
             }
-            .padding(24)
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
             .frame(minWidth: 560, minHeight: 460)
 
             if isCheatSheetVisible, let shortcutTable {
@@ -125,10 +121,10 @@ struct ContentView: View {
         // Hidden button is the standard SwiftUI trick for a
         // window-scoped keyboard shortcut that isn't tied to any visible
         // control: AppKit resolves ⌘/ as this button's key equivalent
-        // before an ordinary keystroke would reach the math block's text
-        // view, so it works regardless of what has focus. `.hidden()`
-        // keeps it invisible while `.background` keeps it from affecting
-        // layout (it's sized to match its container).
+        // before an ordinary keystroke would reach a block's text view,
+        // so it works regardless of what has focus. `.hidden()` keeps it
+        // invisible while `.background` keeps it from affecting layout
+        // (it's sized to match its container).
         .background(
             Button("Toggle Cheat Sheet") {
                 toggleCheatSheet()
