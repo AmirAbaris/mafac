@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<!--
+  katex-shell.html
+  Mafac
+
+  Minimal local HTML page loaded into the WKWebView by MathRenderView.
+  References the KaTeX distribution files by relative path — those files
+  are NOT included in this repo (see README.txt in this directory) and
+  must be dropped in by hand before this actually renders anything.
+
+  Swift calls `renderMath(latexString, displayMode)` via
+  `webView.evaluateJavaScript(...)` every time the LaTeX source changes.
+-->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="katex.min.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: transparent;
+    }
+    #math-root {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 1.4em;
+      color: #1a1a1a;
+    }
+    .katex-error {
+      color: #c0392b;
+      font-family: -apple-system, sans-serif;
+      font-size: 0.7em;
+    }
+  </style>
+</head>
+<body>
+  <div id="math-root"></div>
+
+  <!-- KaTeX itself: not bundled in this repo, see README.txt. -->
+  <script src="katex.min.js"></script>
+
+  <script>
+    /**
+     * Renders a LaTeX string into #math-root via KaTeX.
+     * Called from Swift as: renderMath("x^2", true)
+     */
+    function renderMath(latex, displayMode) {
+      var root = document.getElementById('math-root');
+      if (typeof katex === 'undefined') {
+        root.innerHTML = '<div class="katex-error">KaTeX not loaded — ' +
+          'add katex.min.js/css to Resources/katex/ (see README.txt)</div>';
+        return;
+      }
+      try {
+        katex.render(latex, root, {
+          throwOnError: true,
+          displayMode: !!displayMode
+        });
+      } catch (err) {
+        root.innerHTML = '<div class="katex-error">' +
+          (err && err.message ? err.message : 'Render error') + '</div>';
+      }
+    }
+  </script>
+</body>
+</html>

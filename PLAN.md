@@ -74,8 +74,37 @@ one's exit criteria are met.
 
 ---
 
-### Phase 0 — Project setup & shortcut table design
+### ✅ Phase 0 — Project setup & shortcut table design
 **Goal:** Empty but running macOS app, plus the shortcut table designed as data.
+
+**Done (hand-authored, not yet built/run — see note below):**
+- `Mafac.xcodeproj/project.pbxproj` — macOS App target, SwiftUI lifecycle,
+  bundle id `com.mafac.mafac`, sandboxed with read/write access to
+  user-selected files (for Phase 4), Swift 5 language mode.
+- `Mafac/App/`, `Mafac/Models/`, `Mafac/Views/`, `Mafac/Resources/`
+  folder structure, `MafacApp.swift`, `ContentView.swift`,
+  `Assets.xcassets` (AppIcon/AccentColor placeholders), entitlements file.
+- `Resources/ShortcutTable.json`: 28 entries (25 tier-1 single-key, 3
+  tier-2 `;`-leader) covering root/integral/sum/pi/infinity/fraction/
+  superscript/subscript, ≤/≥/≠/→/±/×/÷/≈/∈, 8 Greek letters, and a couple
+  of leader-sequence examples (∀/∃/∏) — each with a written mnemonic.
+- `Models/ShortcutTable.swift`: Codable model + bundle loader for the JSON.
+- `Views/MathRenderView.swift`: `NSViewRepresentable` WKWebView wrapper
+  that calls a `renderMath(latex, displayMode)` JS function; `ContentView`
+  wires it to render the hardcoded quadratic formula.
+- `Resources/katex/katex-shell.html`: the HTML shell the web view loads,
+  referencing `katex.min.css`/`katex.min.js` by relative path.
+
+**One thing left for you:** the actual KaTeX distribution isn't bundled
+(no network access in the environment this was built in). Drop
+`katex.min.js`, `katex.min.css`, and the `fonts/` folder from a KaTeX
+release (https://github.com/KaTeX/KaTeX/releases) straight into
+`Mafac/Resources/katex/` — see the README.txt there for exact steps.
+That directory is wired into the Xcode project as a folder reference, so
+no project-file editing is needed, just copy the files in and build.
+Also note: this was all hand-written without access to a working Xcode,
+so give the project a first build/open once your Xcode is updated and
+fix up anything that doesn't compile cleanly.
 
 - Create Xcode project: macOS App, SwiftUI lifecycle, app name Mafac, bundle
   id `com.<you>.mafac`.
