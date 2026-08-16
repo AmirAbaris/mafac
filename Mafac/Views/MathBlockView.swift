@@ -25,8 +25,20 @@ struct MathBlockView: NSViewRepresentable {
     /// current LaTeX string whenever it changes.
     var onLatexChange: (String) -> Void
 
+    /// Called synchronously with a `ShortcutEntry.id` every time a
+    /// shortcut is inserted, for the cheat-sheet's "recently used"
+    /// highlight (Phase 2). Optional — nil is a no-op.
+    var onShortcutUsed: ((String) -> Void)? = nil
+
+    /// Mirrors whether this block's text view currently has keyboard
+    /// focus (is the first responder / actively editing), updated by
+    /// the coordinator via NSTextViewDelegate's begin/end-editing
+    /// notifications. Phase 2's ContentView uses this to show/hide the
+    /// cheat-sheet automatically.
+    @Binding var isFocused: Bool
+
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(isFocused: $isFocused)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -46,6 +58,7 @@ struct MathBlockView: NSViewRepresentable {
         textView.configureForMathInput()
         textView.shortcutTable = shortcutTable
         textView.onLatexChanged = onLatexChange
+        textView.onShortcutUsed = onShortcutUsed
         textView.font = .monospacedSystemFont(ofSize: 16, weight: .regular)
         textView.textColor = .labelColor
         textView.isEditable = true
@@ -75,15 +88,37 @@ struct MathBlockView: NSViewRepresentable {
         guard let textView = context.coordinator.textView else { return }
         textView.shortcutTable = shortcutTable
         textView.onLatexChanged = onLatexChange
+        textView.onShortcutUsed = onShortcutUsed
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
         weak var textView: MathBlockTextView?
+        private var isFocused: Binding<Bool>
+
+        init(isFocused: Binding<Bool>) {
+            self.isFocused = isFocused
+        }
+
+        // NSTextView (a subclass of NSText) posts these when it becomes /
+        // resigns the window's field editor for actual text editing —
+        // i.e. exactly the "does this math block currently have keyboard
+        // focus" signal Phase 2's cheat-sheet needs. Using the delegate
+        // callbacks (rather than overriding becomeFirstResponder /
+        // resignFirstResponder on the text view itself) keeps all
+        // SwiftUI-facing state in the coordinator, where the @Binding
+        // lives.
+        func textDidBeginEditing(_ notification: Notification) {
+            isFocused.wrappedValue = true
+        }
+
+        func textDidEndEditing(_ notification: Notification) {
+            isFocused.wrappedValue = false
+        }
     }
 }
 
 #Preview {
     let table = (try? ShortcutTable.loadFromBundle()) ?? ShortcutTable(version: 1, entries: [])
-    return MathBlockView(shortcutTable: table) { _ in }
+    return MathBlockView(shortcutTable: table, onLatexChange: { _ in }, isFocused: .constant(true))
         .frame(width: 480, height: 120)
 }
