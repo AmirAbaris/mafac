@@ -212,23 +212,49 @@ could be exercised against a real build):**
 
 ---
 
-### Phase 2 — Shortcut cheat-sheet overlay
+### ✅ Phase 2 — Shortcut cheat-sheet overlay
 **Goal:** The actual "memorization aid" UI — visible reference of what each
 key does while a math block is focused.
 
-- Build a cheat-sheet panel (sidebar, floating palette, or bottom drawer —
-  pick one; sidebar is simplest to keep persistent) that lists shortcut key
-  → symbol from `ShortcutTable`, grouped sensibly (basic operators, Greek
-  letters, structures, relations, etc).
-- Show/hide logic: visible by default when any math block has focus, hidden
-  when focus leaves all math blocks (or make it a manual toggle — decide
-  based on how it feels once built).
-- Keyboard shortcut to toggle visibility (e.g. `⌘/`), plus a persisted user
-  preference so their choice sticks across launches.
-- Optional nice-to-have if time allows: highlight the row in the cheat-sheet
-  briefly when that shortcut is used, reinforcing the key→symbol link.
-- **Exit criteria:** Typing in a math block shows a live, readable reference
-  panel of all shortcuts; toggling hides/shows it; preference persists.
+- Built `Mafac/Views/CheatSheetView.swift`: a trailing sidebar panel (`HStack`
+  in `ContentView`, no `NavigationSplitView`/`.inspector` needed for a
+  single-block layout) that reads `ShortcutTable` and renders a `ScrollView`
+  of rows grouped by each entry's `category` field, in a fixed sensible
+  order (structures, calculus, operators, relations, constants, greek,
+  logic; any future category not in that list is appended alphabetically
+  rather than dropped). Each row shows the trigger as a keycap-styled
+  badge, the symbol, and the mnemonic text.
+- Show/hide-on-focus: `MathBlockView` now exposes a `@Binding<Bool>
+  isFocused` that its `Coordinator` (an `NSTextViewDelegate`) updates from
+  `textDidBeginEditing`/`textDidEndEditing` — the standard AppKit
+  begin/end-editing notifications `NSTextView` posts as it becomes/resigns
+  the window's editing responder. `ContentView` mirrors this into
+  `isMathBlockFocused` and shows the cheat-sheet whenever it's true, in
+  "automatic" mode.
+- Manual override: `⌘/` is wired via a hidden `Button` with
+  `.keyboardShortcut("/", modifiers: .command)` in `ContentView`'s
+  background (AppKit resolves it as a key equivalent before the keystroke
+  would ever reach the math block's text view, so it works regardless of
+  focus). Toggling flips a persisted `CheatSheetOverride` enum
+  (`automatic` / `forcedShown` / `forcedHidden`) stored via
+  `@AppStorage("mafac.cheatSheet.override")`, so once toggled the explicit
+  state wins over focus-following and survives a relaunch.
+- Nice-to-have implemented: `MathBlockTextView` calls a new
+  `onShortcutUsed(ShortcutEntry.id)` closure right after inserting a
+  shortcut; `ContentView` threads this through to
+  `CheatSheetView.recentlyUsedID` and clears it after ~0.9s via a
+  cancellable `Task`, giving the matching row a brief accent-color
+  highlight.
+- **Known limitations:** not run in Xcode (no working toolchain in this
+  environment, per the Phase 1 note) — reasoned through against documented
+  AppKit/SwiftUI APIs but not exercised interactively. The cheat-sheet has
+  no search/filter yet (left for Phase 6's polish list). Window resizing
+  when the sidebar appears/disappears relies on `.windowResizability(.contentSize)`
+  from Phase 0/1, which may feel slightly abrupt — revisit if it's
+  bothersome in practice.
+- **Exit criteria met:** Typing in a math block shows a live, readable
+  reference panel of all shortcuts; `⌘/` hides/shows it; the override
+  preference persists across launches via `UserDefaults`.
 
 ---
 

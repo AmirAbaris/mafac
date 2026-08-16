@@ -75,6 +75,11 @@ final class MathBlockTextView: NSTextView {
     /// changes, with hole placeholders already stripped out.
     var onLatexChanged: ((String) -> Void)?
 
+    /// Called synchronously (not debounced) with a `ShortcutEntry.id`
+    /// every time a shortcut is successfully inserted. Phase 2's
+    /// cheat-sheet uses this to briefly highlight the matching row.
+    var onShortcutUsed: ((String) -> Void)?
+
     var shortcutTable: ShortcutTable? {
         didSet {
             hasLeaderEntries = shortcutTable?.entries.contains { $0.tier == .leader } ?? false
@@ -195,6 +200,7 @@ final class MathBlockTextView: NSTextView {
         didChangeText()
 
         structureHoleCount[structureID] = holeRanges.count
+        onShortcutUsed?(entry.id)
 
         if let firstHole = holeRanges.first {
             setSelectedRange(NSRange(location: insertRange.location + firstHole.location, length: firstHole.length))
