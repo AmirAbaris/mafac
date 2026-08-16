@@ -121,10 +121,73 @@ fix up anything that doesn't compile cleanly.
 
 ---
 
-### Phase 1 — Math block: shortcut input → LaTeX → live render
+### ✅ Phase 1 — Math block: shortcut input → LaTeX → live render
 **Goal:** A single, standalone math block view where typing shortcut keys
 builds up LaTeX and renders it live. This is the heart of the app — get it
 right before anything else.
+
+**Done (hand-authored, not yet built/run — same caveat as Phase 0, no
+working Xcode in this environment):**
+- `Views/MathBlockTextView.swift` — `NSTextView` subclass that is the
+  keystroke interpreter. The text view's visible text *is* the raw LaTeX
+  source (typing `f` inserts the literal characters `\frac{▢}{▢}`, `▢`
+  U+25A2 marking an empty hole); rendering happens in the adjacent
+  `MathRenderView`. Overrides `insertText(_:replacementRange:)` for
+  shortcut lookup + literal fallthrough (including a `;`-leader state
+  machine for tier-2 entries), `insertTab`/`insertBacktab` for hole
+  navigation, and `deleteBackward`/`deleteForward` for structured delete.
+  Structure/hole tracking uses two custom `NSAttributedString` attributes
+  applied directly on the live `NSTextStorage` (`.mafacStructure`: UUID
+  per shortcut-inserted snippet; `.mafacHole`: Int index, present only on
+  an unedited placeholder) rather than a hand-kept side model, so it can't
+  drift out of sync with edits made elsewhere. Newly typed content only
+  inherits a structure's `.mafacStructure` tag when it's genuinely
+  sandwiched between two characters that already carry that same tag
+  (`structureContainingOpenHole(at:storage:)`) — i.e. still inside an
+  unclosed hole — rather than just because the character before it
+  happens to carry the tag; this is what keeps a completed leaf shortcut
+  (e.g. `\pi`, which has no holes) from having its tag silently spread
+  into whatever ordinary text gets typed after it, which would otherwise
+  make atomic-delete backspace eat that later text too.
+- `Views/MathBlockView.swift` — `NSViewRepresentable` wrapping the above
+  in an `NSScrollView` (manual TextKit stack), disabling all of
+  NSTextView's text-mangling autocorrect/substitution features (smart
+  quotes/dashes, spell check, data detectors) since those would corrupt
+  LaTeX. Surfaces the block's LaTeX outward via a debounced (~120ms)
+  `onLatexChange` closure rather than a two-way binding, so nothing fights
+  the text view's own cursor/selection state.
+- `ContentView.swift` updated: one live `MathBlockView` above a
+  `MathRenderView` (unchanged, still independently reusable) that
+  re-renders as the block's derived LaTeX changes.
+- `Mafac.xcodeproj/project.pbxproj` updated to include both new files
+  (this project uses explicit file lists, not synchronized groups).
+
+**Known limitations (documented rather than hidden, since none of this
+could be exercised against a real build):**
+- Nesting is single-level: each shortcut insertion claims its whole range
+  with one fresh structure ID; a shortcut typed inside another's hole
+  "adopts" that stretch of text, overwriting the outer tag there. Fine for
+  the common case, not a general nested-structure stack.
+- Backspace while a still-empty hole is selected deletes the *entire*
+  enclosing structure, even if an earlier hole in that same structure
+  already has real content typed into it (e.g. numerator filled, tab to
+  empty denominator, backspace loses both). Simplification, not refined.
+- After overtyping a hole's placeholder, the caret stays inside that
+  hole's `{...}` group (correct, so more content can follow inside it);
+  leaving the hole to continue after the structure needs an explicit
+  Right-arrow (or Tab, if another hole follows) — there's no "smart exit"
+  heuristic.
+- Arrow-key navigation relies on NSTextView's default selection-collapse
+  behavior (arrow key while a hole's placeholder is selected collapses to
+  that edge) rather than custom overrides — not exhaustively tested.
+- Undo grouping is wired via `shouldChangeText`/`didChangeText` bracketing
+  around every programmatic edit (the documented correct pattern) but not
+  interactively verified.
+- Only lowercase letters *not* claimed by a Greek-letter or other tier-1
+  shortcut type literally as variables (uppercase letters always do,
+  since triggers are matched case-sensitively against lowercase-only
+  entries in `ShortcutTable.json`) — an inherent tradeoff of the mnemonic
+  system, not a bug.
 
 - Build `MathBlockView`: a custom input surface (likely an `NSViewRepresentable`
   wrapping an `NSTextView` subclass, since you need full control over

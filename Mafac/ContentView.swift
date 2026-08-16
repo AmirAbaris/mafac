@@ -2,37 +2,69 @@
 //  ContentView.swift
 //  Mafac
 //
-//  Phase 0: just proves the KaTeX/WKWebView pipeline works end-to-end by
-//  rendering one hardcoded equation. Nothing here is wired to the shortcut
-//  table yet — that starts in Phase 1.
+//  Phase 1: one standalone math block, wired end-to-end — click in, type
+//  shortcut keys per Resources/ShortcutTable.json (handled by
+//  MathBlockView/MathBlockTextView), and watch it render live via
+//  MathRenderView (the Phase 0 KaTeX/WKWebView pipeline, unchanged and
+//  still reusable on its own).
 //
 
 import SwiftUI
 
 struct ContentView: View {
-    /// Hardcoded per Phase 0 exit criteria: the quadratic formula.
-    private let testEquation = #"x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}"#
+    /// The math block's current LaTeX, pushed here (debounced) by
+    /// MathBlockView every time the user edits the block.
+    @State private var latex: String = ""
+
+    private let shortcutTable: ShortcutTable? = {
+        try? ShortcutTable.loadFromBundle()
+    }()
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Mafac")
                 .font(.largeTitle.bold())
 
-            Text("Phase 0 — KaTeX render pipeline check")
+            Text("Phase 1 — click into the math block and type shortcut keys (e.g. r → √, f → fraction, p → π, i → ∫, ^ / _ → super/subscript). Anything not in the table types literally.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            MathRenderView(latex: testEquation)
-                .frame(minWidth: 480, minHeight: 160)
+            if let shortcutTable {
+                Text("MATH BLOCK")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                MathBlockView(shortcutTable: shortcutTable) { newLatex in
+                    latex = newLatex
+                }
+                .frame(minWidth: 480, minHeight: 90)
                 .background(Color(nsColor: .textBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                 )
+
+                Text("RENDERED")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                MathRenderView(latex: latex)
+                    .frame(minWidth: 480, minHeight: 160)
+                    .background(Color(nsColor: .textBackgroundColor))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+            } else {
+                Text("Failed to load ShortcutTable.json from the app bundle.")
+                    .foregroundStyle(.red)
+            }
         }
         .padding(24)
-        .frame(minWidth: 560, minHeight: 320)
+        .frame(minWidth: 560, minHeight: 460)
     }
 }
 
