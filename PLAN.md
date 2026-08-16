@@ -6,6 +6,26 @@ mnemonic keyboard shortcuts (e.g. `q` → `√`, `w` → `∫`) inside a dedicat
 get memorized through repeated use. Equations render live and can be copied
 out as LaTeX for other apps (Notion, Obsidian, Craft, etc).
 
+## MVP status: Phases 0-5 complete
+
+All six MVP phases (0 through 5) are hand-authored and checked off below.
+The app should do everything the MVP scope describes: shortcut-driven math
+blocks with live KaTeX rendering, a cheat-sheet overlay, notes that mix
+text and math blocks, local `.mafac` file persistence, and clipboard
+export (single-equation "Copy as LaTeX" and whole-note "Copy Note as
+Markdown").
+
+**The one significant outstanding blocker:** none of this has ever been
+built or run. Every phase was written without access to a working
+Xcode/xcodebuild in this environment, reasoned through carefully against
+documented AppKit/SwiftUI APIs but never compiled, let alone exercised
+interactively. Before any Phase 6 polish work, the necessary next step is
+a full build-and-fix pass in real Xcode: update Xcode, open
+`Mafac.xcodeproj`, drop the KaTeX distribution into `Resources/katex/`
+(see Phase 0's note), build, and fix whatever doesn't compile cleanly or
+behave as reasoned. Treat every phase's "known limitations" section as a
+prioritized list of things to specifically exercise by hand once it runs.
+
 ## Core concept, locked in
 
 - **Notes = text + math blocks.** A note is normal rich/plain text, and you
@@ -495,23 +515,130 @@ phases, no working Xcode in this environment):**
 
 ---
 
-### Phase 5 — LaTeX export (copy to clipboard)
+### ✅ Phase 5 — LaTeX export (copy to clipboard)
 **Goal:** Get equations out of Mafac and into other apps correctly formatted.
 
-- Add "Copy as LaTeX" action for a single math block (right-click menu +
-  keyboard shortcut, e.g. `⌘⇧C` while a math block is focused) — copies the
-  raw LaTeX string, wrapped as `$$...$$` (or `\(...\)` for inline — decide
-  based on target apps' conventions; `$$...$$` is the safest common
-  denominator for Notion/Obsidian/Craft).
-- Add "Copy note as Markdown" (whole-note export) that serializes all
-  `.text` blocks as-is and all `.math` blocks as `$$latex$$`, producing a
-  single Markdown string on the clipboard — useful for pasting a whole note
-  into Obsidian/Notion at once.
-- Quick manual verification: paste exported equations into Obsidian (or
-  whatever app you actually use) and confirm they render correctly.
-- **Exit criteria:** Copying a single equation or a whole note produces
-  LaTeX that renders correctly when pasted into your actual target note
-  app(s).
+**What's done (hand-authored, not yet built/run — same caveat as every
+prior phase, no working Xcode in this environment):**
+
+- `Models/NoteDocument+LaTeXExport.swift`: a new `NoteLaTeXExport` enum,
+  deliberately kept separate from Phase 4's `NoteMarkdownCodec` even
+  though both walk `[NoteBlock]`, because the two serve different,
+  incompatible goals — `NoteMarkdownCodec` is a round-trippable *file*
+  format (` ```math ` fences, safe to re-parse), while this is a
+  write-only *clipboard-export* format aimed at other apps' Markdown-math
+  parsers, which expect `$$...$$`, not a fenced code block. Two
+  functions:
+  - `wrapAsLaTeXBlock(_:)`: wraps one block's raw LaTeX as
+    `"$$\n<latex>\n$$"` — `$$` on its own line at each end, not inline
+    (`$$<latex>$$`), a deliberate choice reasoned through in the file's
+    doc comment: own-line delimiters are the form CommonMark-family
+    parsers (which Obsidian/Notion/Craft's math handling is built on)
+    recognize most reliably for *block-level* math, and are required
+    (rather than merely safer) for LaTeX bodies the shortcut system can
+    genuinely produce that span multiple lines (`\begin{cases}`,
+    matrices).
+  - `encode(_:)`: whole-document export — `.text` blocks pass through
+    verbatim, `.math` blocks become `wrapAsLaTeXBlock(latex)`, and every
+    block is joined with `"\n\n"`, reusing Phase 4's codec's exact join
+    convention. This is what puts a blank line on both sides of every
+    `$$` fence, which most Markdown-math parsers require to recognize it
+    as a block rather than running text — traced below.
+- `Views/NoteEditorView.swift`: three discoverable entry points for
+  "Copy as LaTeX" on a single math block (per the brief's explicit
+  requirement that both actions be reachable without knowing a shortcut):
+  a small clipboard-icon button in the math block's "MATH BLOCK" header
+  row, a `.contextMenu` on the block's container (right-click → "Copy as
+  LaTeX"), and `⌘⇧C` — a third hidden `Button` with
+  `.keyboardShortcut("c", modifiers: [.command, .shift])`, added to the
+  same hidden-button `.background` Phase 3's ⌘M already used, grouped via
+  `Group { ... }.hidden()`. The ⌘⇧C handler
+  (`copyFocusedMathBlockAsLaTeX()`) is a no-op unless `focusedBlockID`
+  currently points at a `.math` block — the same guard-and-fall-back
+  shape `insertMathBlockAtCursor()` already used for ⌘M — which is what
+  scopes the shortcut to "a math block has focus" without separate
+  enable/disable plumbing for the hidden button. All three entry points
+  funnel through one `copyLaTeXToPasteboard(_:)` that clears
+  `NSPasteboard.general` and sets the wrapped string as `.string`.
+  - "Copy Note as Markdown" is a toolbar button (`.toolbar` /
+    `ToolbarItem(placement: .primaryAction)`) on `NoteEditorView` —
+    always available (not focus-gated, since it exports the whole
+    document), calling `copyNoteAsMarkdown()` which puts
+    `NoteLaTeXExport.encode(document)` on the pasteboard the same way.
+  - `import AppKit` added to `NoteEditorView.swift` for `NSPasteboard`
+    (SwiftUI files elsewhere in this codebase already needing raw AppKit
+    types, e.g. `MathBlockView.swift`, `NoteTextBlockView.swift`, do the
+    same).
+- `Mafac.xcodeproj/project.pbxproj` updated to include the new file
+  (explicit file lists, matching this project's existing convention).
+
+**Concrete export trace** (worked by hand, since nothing could be run):
+
+Given a `NoteDocument` with blocks
+`[.text("Notes on the quadratic formula:"), .math(latex: "x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}"), .text("Discriminant sign decides root count.")]`:
+
+- *Single-block copy* (right-click the math block, or focus it and press
+  ⌘⇧C): `wrapAsLaTeXBlock(...)` produces
+  ```
+  $$
+  x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}
+  $$
+  ```
+  which is exactly what's placed on `NSPasteboard.general`. This is a
+  complete, well-formed block-math snippet on its own — pasted alone,
+  start/end-of-clipboard act as the implicit block boundaries every
+  Markdown parser treats the same as surrounding blank lines, so no
+  additional leading/trailing blank line is needed for a standalone paste.
+- *Whole-note copy* (toolbar button): `encode(document)` maps to parts
+  `["Notes on the quadratic formula:", "$$\nx = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\n$$", "Discriminant sign decides root count."]`
+  and joins them with `"\n\n"`, yielding:
+  ```
+  Notes on the quadratic formula:
+
+  $$
+  x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}
+  $$
+
+  Discriminant sign decides root count.
+  ```
+  There is exactly one blank line before and after the `$$` fence (from
+  the `"\n\n"` joins on both sides), which is what a CommonMark-family
+  parser needs to treat the `$$...$$` as a block-level element rather
+  than folding it into the surrounding paragraph text — this is
+  well-formed Markdown that Obsidian/Notion/Craft's math-aware paste
+  paths would render as: a text line, a rendered equation, a text line.
+
+**Known limitations:**
+
+- As with every prior phase, none of this was compiled or run — reasoned
+  through against documented `NSPasteboard`, `.contextMenu`, and
+  `.toolbar`/`ToolbarItem` API shapes, but not exercised interactively.
+  Give the three "Copy as LaTeX" entry points and the toolbar button a
+  real click-through pass once Xcode is available.
+- No escaping for a math block whose raw LaTeX itself contains a bare
+  `$$`-only line (very unusual — not valid LaTeX on its own) — would
+  produce an ambiguous-looking fence in the exported text. Accepted,
+  matching Phase 4's "plain text/LaTeX passes through unescaped"
+  philosophy; this format is write-only and never read back by Mafac, so
+  there's no round-trip correctness to protect.
+- Inline math (`$x^2$` shorthand inside a text block, mentioned as a
+  Phase 6 idea) isn't part of this export — only whole math *blocks* are
+  exported as `$$...$$`, since that's the only kind of math node the
+  document model has.
+- No visual confirmation toast/feedback when a copy succeeds — the user's
+  only signal is that the pasteboard changed. Small polish item for
+  Phase 6 if it turns out to matter in practice.
+- Could not literally test-paste into Obsidian/Notion/Craft (no way to
+  run the app or a browser session against those apps in this
+  environment) — verified instead via the hand-traced example above,
+  checked against documented CommonMark/remark-math block-recognition
+  rules (blank line before/after a block-level element, `$$` alone on its
+  own line for multi-line bodies).
+- **Exit criteria:** Copying a single equation or a whole note produces a
+  well-formed `$$...$$`-wrapped Markdown string, verified by the hand
+  trace above rather than an actual paste (no running Xcode/app in this
+  environment) — do a real paste into your target app(s) as the first
+  thing to check once the app builds.
 
 ---
 

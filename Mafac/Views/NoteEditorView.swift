@@ -65,7 +65,31 @@
 //    Phase 1's "shortcut lands the cursor in the next hole" feel.
 //
 
+//  Phase 5 (LaTeX export, copy to clipboard):
+//
+//  - "Copy as LaTeX" for one math block is reachable three ways, so it's
+//    discoverable without needing to know a shortcut: a small clipboard
+//    button in that block's "MATH BLOCK" header row, a right-click
+//    .contextMenu on the block's container, and ⌘⇧C while a math block
+//    has focus (the same hidden-button key-equivalent pattern Phase 2
+//    used for ⌘/ and Phase 3 used for ⌘M — see
+//    copyFocusedMathBlockAsLaTeX(), which is a no-op unless the
+//    currently focused block is specifically `.math`, so the shortcut is
+//    effectively scoped to "a math block has focus" without needing
+//    separate enable/disable plumbing for the hidden button itself).
+//  - "Copy Note as Markdown" (whole-note export) is a toolbar button
+//    (.toolbar below) — always available, not focus-gated, since it
+//    operates on the whole document rather than one block.
+//  - Both actions use NoteLaTeXExport (Models/NoteDocument+LaTeXExport.swift),
+//    a serializer deliberately separate from Phase 4's NoteMarkdownCodec
+//    (the on-disk file format) — see that file's doc comment for why.
+//    Both put a plain string on NSPasteboard.general; there is no
+//    richer pasteboard type involved since the target apps' paste-as
+//    -Markdown paths all work off plain text.
+//
+
 import SwiftUI
+import AppKit
 
 /// Live NSTextView handles for text blocks currently in the document,
 /// keyed by block id. This exists purely so the ⌘M handler (which runs at
@@ -119,14 +143,34 @@ struct NoteEditorView: View {
         }
         // Same hidden-button trick Phase 2's ContentView used for ⌘/ — see
         // the type-level doc comment above for why this reliably wins
-        // over the default Window > Minimize (⌘M) menu item.
+        // over the default Window > Minimize (⌘M) menu item. Phase 5 adds
+        // a second hidden button for ⌘⇧C ("Copy as LaTeX" while a math
+        // block has focus) in the same background, grouped so `.hidden()`
+        // applies to both without affecting layout.
         .background(
-            Button("Insert Math Block") {
-                insertMathBlockAtCursor()
+            Group {
+                Button("Insert Math Block") {
+                    insertMathBlockAtCursor()
+                }
+                .keyboardShortcut("m", modifiers: .command)
+
+                Button("Copy Math Block as LaTeX") {
+                    copyFocusedMathBlockAsLaTeX()
+                }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
             }
-            .keyboardShortcut("m", modifiers: .command)
             .hidden()
         )
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    copyNoteAsMarkdown()
+                } label: {
+                    Label("Copy Note as Markdown", systemImage: "doc.on.clipboard")
+                }
+                .help("Copy the whole note as Markdown, with math blocks as $$...$$")
+            }
+        }
     }
 
     @ViewBuilder
@@ -142,9 +186,25 @@ struct NoteEditorView: View {
 
         case .math(let latex):
             VStack(alignment: .leading, spacing: 6) {
-                Text("MATH BLOCK")
-                    .font(.caption2.weight(.semibold))
+                HStack {
+                    Text("MATH BLOCK")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    // Discoverable, non-hidden entry point for "Copy as
+                    // LaTeX" — the context menu and ⌘⇧C (below) cover the
+                    // same action for users who already know about them.
+                    Button {
+                        copyLaTeXToPasteboard(latex)
+                    } label: {
+                        Image(systemName: "doc.on.clipboard")
+                    }
+                    .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
+                    .help("Copy as LaTeX (⌘⇧C)")
+                }
 
                 MathBlockView(
                     shortcutTable: shortcutTable ?? ShortcutTable(version: 1, entries: []),
@@ -168,6 +228,11 @@ struct NoteEditorView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     )
+            }
+            .contextMenu {
+                Button("Copy as LaTeX") {
+                    copyLaTeXToPasteboard(latex)
+                }
             }
         }
     }
@@ -255,5 +320,42 @@ struct NoteEditorView: View {
         document.blocks.append(NoteBlock(id: mathID, content: .math(latex: "")))
         document.blocks.append(NoteBlock(content: .text("")))
         focusedBlockID = mathID
+    }
+
+    // MARK: - Phase 5: LaTeX export (copy to clipboard)
+
+    /// ⌘⇧C handler. Deliberately a no-op unless the currently focused
+    /// block is specifically `.math` — this is what "scopes" the shortcut
+    /// to math blocks despite the hidden button itself always being wired
+    /// up and able to intercept the key equivalent (same pattern as
+    /// `insertMathBlockAtCursor`'s guard above, which similarly falls
+    /// back rather than acting on the wrong kind of focused block).
+    private func copyFocusedMathBlockAsLaTeX() {
+        guard
+            let focusedID = focusedBlockID,
+            let block = document.blocks.first(where: { $0.id == focusedID }),
+            case let .math(latex) = block.content
+        else { return }
+        copyLaTeXToPasteboard(latex)
+    }
+
+    /// Puts one math block's raw LaTeX on the general pasteboard, wrapped
+    /// as a block-level `$$...$$` (see `NoteLaTeXExport.wrapAsLaTeXBlock`
+    /// for the exact formatting and why). Shared by the per-block copy
+    /// button, the context menu item, and the ⌘⇧C handler above.
+    private func copyLaTeXToPasteboard(_ latex: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(NoteLaTeXExport.wrapAsLaTeXBlock(latex), forType: .string)
+    }
+
+    /// Toolbar action: serializes the whole document (`NoteLaTeXExport.
+    /// encode`, text verbatim + math as `$$...$$`, blocks separated by
+    /// blank lines) and puts the result on the general pasteboard as
+    /// plain text, ready to paste as Markdown into Notion/Obsidian/Craft.
+    private func copyNoteAsMarkdown() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(NoteLaTeXExport.encode(document), forType: .string)
     }
 }
