@@ -24,14 +24,19 @@
 import Foundation
 
 /// The content of a single note block.
-enum NoteBlockContent {
+///
+/// `Equatable` (added in Phase 4) is used only for change-detection driving
+/// debounced autosave (`ContentView` diffs the open `NoteDocument` to decide
+/// when to schedule a save) — it has no bearing on the on-disk format, see
+/// `NoteDocument+Markdown.swift`.
+enum NoteBlockContent: Equatable {
     case text(String)
     case math(latex: String)
 }
 
 /// One block in a `NoteDocument`. Order in `NoteDocument.blocks` is the
 /// document's reading order, top to bottom.
-struct NoteBlock: Identifiable {
+struct NoteBlock: Identifiable, Equatable {
     let id: UUID
     var content: NoteBlockContent
 
@@ -46,9 +51,14 @@ struct NoteBlock: Identifiable {
     }
 }
 
-/// A note: a title plus an ordered array of blocks. Lives entirely in
-/// memory in Phase 3 — no persistence (Phase 4).
-struct NoteDocument {
+/// A note: a title plus an ordered array of blocks.
+///
+/// Phase 4 adds on-disk persistence (see `NoteDocument+Markdown.swift` for
+/// the encode/decode pure functions and `NotesStore.swift` for the
+/// file-system side: folder selection, listing, load/save/create/rename/
+/// delete). `NoteDocument` itself stays a plain in-memory value type either
+/// way — it doesn't know about files.
+struct NoteDocument: Equatable {
     var title: String
     var blocks: [NoteBlock]
 

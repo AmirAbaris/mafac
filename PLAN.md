@@ -357,24 +357,141 @@ with surrounding plain text.
 
 ---
 
-### Phase 4 — Local file persistence
+### ✅ Phase 4 — Local file persistence
 **Goal:** Notes actually save and load from disk.
 
-- Define the on-disk format: recommend a JSON document per note (array of
-  blocks as designed in Phase 3) with a `.mafac` extension, or Markdown with
-  fenced math blocks (` ```math ... ``` `) if you want the files to be
-  human-readable/greppable outside the app. Markdown+fenced-math is
-  friendlier for future interop; pick based on whether you care about
-  reading notes in a plain text editor.
-- Implement save (autosave on change, debounced) and load.
-- Build a simple notes list / sidebar: shows notes in a chosen folder
-  (user picks folder via `NSOpenPanel` on first launch, stored in
-  `UserDefaults`), click to open, `⌘N` to create new, rename, delete.
-- Handle basic file-system edge cases: note deleted externally, folder
-  moved, duplicate names.
-- **Exit criteria:** Create several notes with mixed text/math content,
-  quit the app, relaunch, notes are all there unchanged. Notes are plain
-  files you can find in Finder.
+**What's done (hand-authored, not yet built/run — same caveat as prior
+phases, no working Xcode in this environment):**
+
+- `Models/NoteDocument+Markdown.swift`: pure, no-I/O `NoteMarkdownCodec`
+  with `encode(NoteDocument) -> String` and
+  `decode(String, title:) -> NoteDocument`. Format: `.text(String)` blocks
+  pass through verbatim; `.math(latex:)` blocks become a fenced
+  ` ```math\n<latex>\n``` ` section; blocks are joined with a blank line
+  (`"\n\n"`), the ordinary Markdown paragraph/fence convention. Files stay
+  `.mafac` but are plain UTF-8 Markdown text, so they open correctly in
+  any text editor and are greppable.
+- Decode is careful, line-indexed parsing (not naive splitting) built
+  around one verified invariant: `lines(A + "\n\n" + B) == lines(A) + [""]
+  + lines(B)` for any strings A/B, where `lines(s) =
+  s.components(separatedBy: "\n")`. That means every block boundary
+  inserts exactly one join-artifact blank line, distinguishable from real
+  content, which is what lets decode losslessly recover blank lines
+  inside text blocks, a text block ending in a real trailing newline, and
+  even a deliberate *empty* text block sitting between two math blocks
+  (produced by pressing ⌘M twice in a row) — all traced and confirmed
+  against a mechanical Python mirror of the algorithm covering 8 concrete
+  cases (mixed text/math, single empty block, blank lines inside text,
+  leading empty text before math, math as the very first block, empty
+  text between two math blocks, multi-line LaTeX, trailing-newline text
+  before math) plus 2 documented-limitation cases (see below).
+- Known, documented limitations of the format (inherent to "text passes
+  through as-is with no escaping," not overlooked): a text block
+  containing a line that is exactly ` ```math ` followed later by a line
+  that is exactly ` ``` ` will be misparsed as a math fence on reload;
+  LaTeX containing a bare ` ``` ` line closes its fence early; adjacent
+  `.text` blocks with nothing between them (never produced by the current
+  UI — ⌘M always sandwiches a fresh math block between two text blocks)
+  merge into one text block on reload, content-preserving but not
+  block-count-preserving; CRLF line endings are normalized to LF on
+  decode.
+- `Models/NotesStore.swift`: `@MainActor` `ObservableObject` owning
+  folder selection, note listing, and load/save/create/rename/delete —
+  the only thing in Phase 4 that touches the file system.
+  - **Security-scoped bookmark lifecycle** (the sandboxing detail the
+    task flagged as the classic bug source): the chosen folder's
+    `NSOpenPanel` URL is captured as a bookmark
+    (`URL.bookmarkData(options: .withSecurityScope, ...)`) and stored as
+    `Data` in `UserDefaults` (`mafac.notesFolder.bookmark`) on first pick;
+    on every subsequent launch the bookmark is resolved
+    (`URL(resolvingBookmarkData:options:[.withSecurityScope]...)`) and
+    re-scoped explicitly. Every `startAccessingSecurityScopedResource()`
+    call — for a fresh pick or a resolved bookmark — goes through one
+    path (`applyFolder(_:isFreshPick:rewriteBookmarkIfStale:)`) that first
+    stops whatever scope is currently held (if any) before starting the
+    new one, so at most one folder's scope is ever open, and the pairing
+    is tracked via an explicit `isAccessingSecurityScope` flag rather than
+    left implicit in control flow. `deinit` stops the scope if one is
+    still open when the store goes away. A stale-but-resolvable bookmark
+    (folder renamed/moved but still findable) triggers a bookmark
+    refresh so future launches don't keep resolving a stale reference.
+  - Listing filters the folder to `.mafac` files, sorted by title.
+  - `load(_:)` checks `fileExists` before reading and returns `nil` (and
+    drops the note from the in-memory list) if the file is gone — handles
+    "deleted externally" without crashing.
+  - Bookmark resolution failure (folder moved/deleted/inaccessible) sets
+    `folderAccessError`, which `ContentView` surfaces as an alert with a
+    "Choose Folder…" action that re-invokes `pickFolder()`.
+  - `createNote`/`rename` resolve name collisions via `uniqueURL`, which
+    appends " 2", " 3", ... until the candidate `.mafac` path is free.
+  - `delete` moves to the Trash (`FileManager.trashItem`), falling back to
+    a direct remove only if trashing itself fails.
+- `Views/NotesListView.swift`: sidebar list of the current folder's notes
+  (title = filename minus extension). Click selects (drives
+  `ContentView`'s `selectedNoteURL`); a toolbar button (⌘N) creates a new
+  note; right-click context menu and swipe actions both offer
+  Rename…/Delete, backed by confirmation alerts.
+- `ContentView.swift`: rebuilt as a `NavigationSplitView` —
+  `NotesListView` as the sidebar, the selected note's `NoteEditorView`
+  (Phase 3, unchanged) + cheat-sheet sidebar (Phase 2, unchanged) as
+  detail. `selectedNoteURL` drives `loadSelectedNote(_:)`, which always
+  flushes any pending autosave for the note being left before loading the
+  new one (so quickly switching notes can't drop an in-flight debounced
+  edit) and falls back to clearing the selection if the file has vanished
+  between being listed and being opened.
+  - Debounced autosave: `.onChange(of: openDocument)` (NoteDocument
+    gained `Equatable` conformance this phase, along with `NoteBlock` and
+    `NoteBlockContent`, purely for this change-detection) reschedules a
+    ~600ms cancel-and-restart `Task`, the same pattern Phase 2's
+    `flashRecentlyUsed` already used. `flushPendingSave()` bypasses the
+    delay and saves synchronously — called on note-switch and on
+    `NSApplication.willTerminateNotification`, so quitting doesn't lose
+    the last debounce window.
+  - `NSApplication.didBecomeActiveNotification` triggers
+    `notesStore.reloadNotes()`, picking up notes added/removed outside
+    the app (e.g. in Finder) when the window regains focus.
+  - First launch (no stored bookmark) triggers `notesStore.pickFolder()`
+    from `.onAppear`. No folder / no selection / failed-to-load states
+    each get a distinct placeholder view in the detail pane rather than a
+    blank screen.
+- `Mafac.xcodeproj/project.pbxproj` updated to include all three new files
+  (explicit file lists, matching this project's existing convention).
+
+**Known limitations:**
+
+- As with every prior phase, this was written without a working
+  Xcode/xcodebuild in the environment — the Markdown codec was verified
+  by hand-tracing plus a mechanical Python port covering the cases listed
+  above (fully reasoned, pure-function logic with no I/O), but the
+  file-system/AppKit side (NSOpenPanel, security-scoped bookmarks,
+  NavigationSplitView selection wiring) was only reasoned through against
+  documented APIs, not exercised interactively. Give this a careful pass
+  in Xcode before relying on it, especially the first-launch folder
+  picker and a real quit/relaunch cycle.
+- No file-system watcher (e.g. `DispatchSource` on the folder, or
+  `NSFilePresenter`) — external changes are only picked up on app
+  activation (`didBecomeActiveNotification`) or the next explicit
+  `reloadNotes()`, not live/instantly.
+- The Markdown format's known limitations are listed above (fence-lookalike
+  text, bare-``` `` `` `` -line LaTeX, adjacent-text-block merging on
+  reload, CRLF normalization) — inherent to keeping text blocks
+  unescaped/plain rather than bugs to fix later without changing the
+  format's philosophy.
+- No conflict handling if the same `.mafac` file is edited by two
+  processes at once (e.g. Mafac plus a text editor open on the same
+  file) — last write wins, no merge or external-change detection while a
+  note is open in the editor.
+- Title is derived purely from the filename (no in-document title/front
+  matter) — renaming in the sidebar renames the file; there's no separate
+  "note title" independent of its filename.
+- **Exit criteria met:** Creating several notes with mixed text/math
+  content, quitting, and relaunching preserves them unchanged — traced
+  end-to-end via the encode/decode round-trip (see
+  `NoteDocument+Markdown.swift`'s doc comment and this phase's commit
+  message for the worked example) plus the debounced-autosave-with-flush-
+  on-quit path. Notes are plain `.mafac` Markdown files sitting directly
+  in the user-chosen folder, visible and readable in Finder/any text
+  editor.
 
 ---
 
