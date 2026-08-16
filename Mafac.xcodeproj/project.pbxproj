@@ -11,6 +11,8 @@
 		B80D6714E7914B418C60E379 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC8790F664474863A5D2D664 /* ContentView.swift */; };
 		32E4FF91AF9C4999B22F56FA /* ShortcutTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D109DEF1FAE45E7B0BD4C09 /* ShortcutTable.swift */; };
 		A337967B36854380BE15F581 /* MathRenderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16AC67FC13424D5791D52238 /* MathRenderView.swift */; };
+		BBAEE5DC8C864714B3937226 /* MathBlockTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C150661A5B64D1F9653B94E /* MathBlockTextView.swift */; };
+		DCB1321A5930452AA884B742 /* MathBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22091C3A40E54BB4BE6BEA17 /* MathBlockView.swift */; };
 		7CD73A9447C04428B66B172F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 65CB7B253F804B8EAAE618E2 /* Assets.xcassets */; };
 		93D16DBBDCFD44C59C819474 /* ShortcutTable.json in Resources */ = {isa = PBXBuildFile; fileRef = 25491BCFB31740B5BD7E9C6F /* ShortcutTable.json */; };
 		24B051B11884495DA848A9EE /* katex in Resources */ = {isa = PBXBuildFile; fileRef = 06B9F1043E504C42A93B7CA2 /* katex */; };
@@ -22,6 +24,8 @@
 		FC8790F664474863A5D2D664 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0D109DEF1FAE45E7B0BD4C09 /* ShortcutTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutTable.swift; sourceTree = "<group>"; };
 		16AC67FC13424D5791D52238 /* MathRenderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathRenderView.swift; sourceTree = "<group>"; };
+		5C150661A5B64D1F9653B94E /* MathBlockTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathBlockTextView.swift; sourceTree = "<group>"; };
+		22091C3A40E54BB4BE6BEA17 /* MathBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathBlockView.swift; sourceTree = "<group>"; };
 		65CB7B253F804B8EAAE618E2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6F6E03450B5146339FD7E2E4 /* Mafac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mafac.entitlements; sourceTree = "<group>"; };
 		25491BCFB31740B5BD7E9C6F /* ShortcutTable.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ShortcutTable.json; sourceTree = "<group>"; };
@@ -89,6 +93,8 @@
 			isa = PBXGroup;
 			children = (
 				16AC67FC13424D5791D52238 /* MathRenderView.swift */,
+				5C150661A5B64D1F9653B94E /* MathBlockTextView.swift */,
+				22091C3A40E54BB4BE6BEA17 /* MathBlockView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -177,6 +183,8 @@
 				B80D6714E7914B418C60E379 /* ContentView.swift in Sources */,
 				32E4FF91AF9C4999B22F56FA /* ShortcutTable.swift in Sources */,
 				A337967B36854380BE15F581 /* MathRenderView.swift in Sources */,
+				BBAEE5DC8C864714B3937226 /* MathBlockTextView.swift in Sources */,
+				DCB1321A5930452AA884B742 /* MathBlockView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
