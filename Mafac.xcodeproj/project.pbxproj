@@ -10,13 +10,12 @@
 		0CDADE508A584CCFADFA5083 /* MafacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7215D04390F246BB98CF88C3 /* MafacApp.swift */; };
 		B80D6714E7914B418C60E379 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC8790F664474863A5D2D664 /* ContentView.swift */; };
 		32E4FF91AF9C4999B22F56FA /* ShortcutTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D109DEF1FAE45E7B0BD4C09 /* ShortcutTable.swift */; };
-		A337967B36854380BE15F581 /* MathRenderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16AC67FC13424D5791D52238 /* MathRenderView.swift */; };
-		BBAEE5DC8C864714B3937226 /* MathBlockTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C150661A5B64D1F9653B94E /* MathBlockTextView.swift */; };
-		DCB1321A5930452AA884B742 /* MathBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22091C3A40E54BB4BE6BEA17 /* MathBlockView.swift */; };
 		91DB6E4CCAEF405390631398 /* CheatSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6938DC3EDFA948C3B167A0BE /* CheatSheetView.swift */; };
 		E8890AAF522E463D96D689B5 /* NoteDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D645F9FC2C485BAEBE9EB9 /* NoteDocument.swift */; };
-		295A191C5698438A9431CCD2 /* NoteTextBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F918A6297A144F158E083E7E /* NoteTextBlockView.swift */; };
 		75D6480C7E564656A8E827F7 /* NoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5816CCCF3E744035A61D2BC9 /* NoteEditorView.swift */; };
+		1A2B3C4D5E6F708192A3B4C5 /* LaTeXInlineRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C6 /* LaTeXInlineRenderer.swift */; };
+		1A2B3C4D5E6F708192A3B4C7 /* MathInlineAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C8 /* MathInlineAttachment.swift */; };
+		1A2B3C4D5E6F708192A3B4C9 /* NoteUnifiedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4CA /* NoteUnifiedTextView.swift */; };
 		73FE49413BA348ECA4A00055 /* NoteDocument+Markdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E74BDB8AA0D45CDB8B73E6F /* NoteDocument+Markdown.swift */; };
 		3A37A3F0EB6D4FC0BB89F4C9 /* NoteDocument+LaTeXExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F91698F5754A238D5A5CDE /* NoteDocument+LaTeXExport.swift */; };
 		FFCD5A2784A64B27B70E0FBA /* NotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E4063F67E4842D6AF62D31A /* NotesStore.swift */; };
@@ -31,13 +30,12 @@
 		7215D04390F246BB98CF88C3 /* MafacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MafacApp.swift; sourceTree = "<group>"; };
 		FC8790F664474863A5D2D664 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0D109DEF1FAE45E7B0BD4C09 /* ShortcutTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutTable.swift; sourceTree = "<group>"; };
-		16AC67FC13424D5791D52238 /* MathRenderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathRenderView.swift; sourceTree = "<group>"; };
-		5C150661A5B64D1F9653B94E /* MathBlockTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathBlockTextView.swift; sourceTree = "<group>"; };
-		22091C3A40E54BB4BE6BEA17 /* MathBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathBlockView.swift; sourceTree = "<group>"; };
 		6938DC3EDFA948C3B167A0BE /* CheatSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheatSheetView.swift; sourceTree = "<group>"; };
 		18D645F9FC2C485BAEBE9EB9 /* NoteDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDocument.swift; sourceTree = "<group>"; };
-		F918A6297A144F158E083E7E /* NoteTextBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextBlockView.swift; sourceTree = "<group>"; };
 		5816CCCF3E744035A61D2BC9 /* NoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F708192A3B4C6 /* LaTeXInlineRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaTeXInlineRenderer.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F708192A3B4C8 /* MathInlineAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathInlineAttachment.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F708192A3B4CA /* NoteUnifiedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteUnifiedTextView.swift; sourceTree = "<group>"; };
 		2E74BDB8AA0D45CDB8B73E6F /* NoteDocument+Markdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NoteDocument+Markdown.swift"; sourceTree = "<group>"; };
 		F6F91698F5754A238D5A5CDE /* NoteDocument+LaTeXExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NoteDocument+LaTeXExport.swift"; sourceTree = "<group>"; };
 		0E4063F67E4842D6AF62D31A /* NotesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesStore.swift; sourceTree = "<group>"; };
@@ -105,6 +103,7 @@
 				2E74BDB8AA0D45CDB8B73E6F /* NoteDocument+Markdown.swift */,
 				F6F91698F5754A238D5A5CDE /* NoteDocument+LaTeXExport.swift */,
 				0E4063F67E4842D6AF62D31A /* NotesStore.swift */,
+				1A2B3C4D5E6F708192A3B4C6 /* LaTeXInlineRenderer.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -112,13 +111,11 @@
 		60C8F07056E9401A8EDB9B4F /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				16AC67FC13424D5791D52238 /* MathRenderView.swift */,
-				5C150661A5B64D1F9653B94E /* MathBlockTextView.swift */,
-				22091C3A40E54BB4BE6BEA17 /* MathBlockView.swift */,
 				6938DC3EDFA948C3B167A0BE /* CheatSheetView.swift */,
-				F918A6297A144F158E083E7E /* NoteTextBlockView.swift */,
 				5816CCCF3E744035A61D2BC9 /* NoteEditorView.swift */,
 				84093A190E9D485EA8C8D0D2 /* NotesListView.swift */,
+				1A2B3C4D5E6F708192A3B4C8 /* MathInlineAttachment.swift */,
+				1A2B3C4D5E6F708192A3B4CA /* NoteUnifiedTextView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -206,17 +203,16 @@
 				0CDADE508A584CCFADFA5083 /* MafacApp.swift in Sources */,
 				B80D6714E7914B418C60E379 /* ContentView.swift in Sources */,
 				32E4FF91AF9C4999B22F56FA /* ShortcutTable.swift in Sources */,
-				A337967B36854380BE15F581 /* MathRenderView.swift in Sources */,
-				BBAEE5DC8C864714B3937226 /* MathBlockTextView.swift in Sources */,
-				DCB1321A5930452AA884B742 /* MathBlockView.swift in Sources */,
 				91DB6E4CCAEF405390631398 /* CheatSheetView.swift in Sources */,
 				E8890AAF522E463D96D689B5 /* NoteDocument.swift in Sources */,
-				295A191C5698438A9431CCD2 /* NoteTextBlockView.swift in Sources */,
 				75D6480C7E564656A8E827F7 /* NoteEditorView.swift in Sources */,
 				73FE49413BA348ECA4A00055 /* NoteDocument+Markdown.swift in Sources */,
 				3A37A3F0EB6D4FC0BB89F4C9 /* NoteDocument+LaTeXExport.swift in Sources */,
 				FFCD5A2784A64B27B70E0FBA /* NotesStore.swift in Sources */,
 				79B9D176FB394C549DF70F89 /* NotesListView.swift in Sources */,
+				1A2B3C4D5E6F708192A3B4C5 /* LaTeXInlineRenderer.swift in Sources */,
+				1A2B3C4D5E6F708192A3B4C7 /* MathInlineAttachment.swift in Sources */,
+				1A2B3C4D5E6F708192A3B4C9 /* NoteUnifiedTextView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -173,7 +173,7 @@ struct ContentView: View {
                         message: "Choose a folder to store your notes in.",
                         buttonTitle: "Choose Folder\u{2026}"
                     ) { notesStore.pickFolder() }
-                } else if let shortcutTable, openMetadata != nil {
+                } else if let shortcutTable, let openMetadata {
                     NoteEditorView(
                         document: openDocumentBinding,
                         focusedBlockID: $focusedBlockID,
@@ -182,6 +182,11 @@ struct ContentView: View {
                         isCheatSheetVisible: isCheatSheetVisible,
                         onToggleCheatSheet: { toggleCheatSheet() }
                     )
+                    // Forces a fresh NoteUnifiedTextView (and Coordinator)
+                    // whenever the open note changes, rather than trying
+                    // to diff-and-reload one shared instance — see
+                    // NoteEditorView's doc comment.
+                    .id(openMetadata.id)
                 } else if shortcutTable == nil {
                     Text("Failed to load ShortcutTable.json from the app bundle.")
                         .foregroundStyle(.red)
