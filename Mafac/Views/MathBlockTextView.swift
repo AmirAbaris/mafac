@@ -256,8 +256,8 @@ final class MathBlockTextView: NSTextView {
         scheduleRenderDebounced()
     }
 
-    /// Typing attributes (font/color) plus, if the insertion point sits
-    /// immediately after an existing structure's characters, that
+    /// Typing attributes (font/color) plus, if the insertion point is
+    /// genuinely still inside one of a structure's open holes, that
     /// structure's ID — so content typed into a hole stays associated
     /// with the structure it belongs to.
     private func baseAttributes(inheritingStructureAt location: Int) -> [NSAttributedString.Key: Any] {
@@ -265,13 +265,43 @@ final class MathBlockTextView: NSTextView {
             .font: font ?? NSFont.monospacedSystemFont(ofSize: 15, weight: .regular),
             .foregroundColor: NSColor.labelColor
         ]
-        if let storage = textStorage, storage.length > 0, location > 0 {
-            let probeLocation = min(location - 1, storage.length - 1)
-            if let structID = storage.attribute(.mafacStructure, at: probeLocation, effectiveRange: nil) {
-                attrs[.mafacStructure] = structID
-            }
+        if let storage = textStorage, let structID = structureContainingOpenHole(at: location, storage: storage) {
+            attrs[.mafacStructure] = structID
         }
         return attrs
+    }
+
+    /// Returns the structure ID that `location` sits inside, but ONLY if
+    /// it's genuinely sandwiched between two characters that still belong
+    /// to that same structure (one on each side) — i.e. still inside an
+    /// unclosed hole, not merely typed right after the structure's last
+    /// character.
+    ///
+    /// This distinction matters because `NSAttributedString.attribute(at:
+    /// effectiveRange:)` merges contiguous runs sharing an equal value: if
+    /// we inherited `.mafacStructure` from just the *preceding* character
+    /// alone, then once a leaf shortcut with zero holes (e.g. "\pi",
+    /// "\alpha", "\times" — most of ShortcutTable.json) is inserted, any
+    /// ordinary text typed right after it would keep getting tagged with
+    /// that same structure ID forever, since nothing would ever stop the
+    /// merge. `structureIsUnedited`'s zero-hole branch would then treat
+    /// that entire merged run as "the leaf, still untouched", and a
+    /// single Backspace would silently wipe out all of it, not just the
+    /// leaf. Requiring agreement on *both* sides means a leaf's tag can
+    /// never spread past its own last character (nothing typed after it
+    /// is ever tagged with its ID, so nothing there can match on the far
+    /// side), while multi-hole structures still correctly propagate their
+    /// tag to newly typed hole content sitting between an unclosed "{"
+    /// and its matching "}".
+    private func structureContainingOpenHole(at location: Int, storage: NSTextStorage) -> Any? {
+        guard location > 0, location < storage.length else { return nil }
+        guard let before = storage.attribute(.mafacStructure, at: location - 1, effectiveRange: nil) as? UUID else {
+            return nil
+        }
+        guard let after = storage.attribute(.mafacStructure, at: location, effectiveRange: nil) as? UUID else {
+            return nil
+        }
+        return before == after ? before : nil
     }
 
     // MARK: - Hole navigation (Tab / Shift-Tab)

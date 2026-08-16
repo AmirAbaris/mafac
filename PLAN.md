@@ -140,7 +140,15 @@ working Xcode in this environment):**
   applied directly on the live `NSTextStorage` (`.mafacStructure`: UUID
   per shortcut-inserted snippet; `.mafacHole`: Int index, present only on
   an unedited placeholder) rather than a hand-kept side model, so it can't
-  drift out of sync with edits made elsewhere.
+  drift out of sync with edits made elsewhere. Newly typed content only
+  inherits a structure's `.mafacStructure` tag when it's genuinely
+  sandwiched between two characters that already carry that same tag
+  (`structureContainingOpenHole(at:storage:)`) — i.e. still inside an
+  unclosed hole — rather than just because the character before it
+  happens to carry the tag; this is what keeps a completed leaf shortcut
+  (e.g. `\pi`, which has no holes) from having its tag silently spread
+  into whatever ordinary text gets typed after it, which would otherwise
+  make atomic-delete backspace eat that later text too.
 - `Views/MathBlockView.swift` — `NSViewRepresentable` wrapping the above
   in an `NSScrollView` (manual TextKit stack), disabling all of
   NSTextView's text-mangling autocorrect/substitution features (smart
