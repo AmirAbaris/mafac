@@ -15,6 +15,8 @@
 		75D6480C7E564656A8E827F7 /* NoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5816CCCF3E744035A61D2BC9 /* NoteEditorView.swift */; };
 		1A2B3C4D5E6F708192A3B4C5 /* LaTeXInlineRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C6 /* LaTeXInlineRenderer.swift */; };
 		1A2B3C4D5E6F708192A3B4C7 /* MathInlineAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C8 /* MathInlineAttachment.swift */; };
+		2A2B3C4D5E6F708192A3B4C1 /* MathBoxTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A2B3C4D5E6F708192A3B4C2 /* MathBoxTextView.swift */; };
+		2A2B3C4D5E6F708192A3B4C3 /* MathEditPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A2B3C4D5E6F708192A3B4C4 /* MathEditPopover.swift */; };
 		1A2B3C4D5E6F708192A3B4C9 /* NoteUnifiedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4CA /* NoteUnifiedTextView.swift */; };
 		73FE49413BA348ECA4A00055 /* NoteDocument+Markdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E74BDB8AA0D45CDB8B73E6F /* NoteDocument+Markdown.swift */; };
 		3A37A3F0EB6D4FC0BB89F4C9 /* NoteDocument+LaTeXExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F91698F5754A238D5A5CDE /* NoteDocument+LaTeXExport.swift */; };
@@ -35,6 +37,8 @@
 		5816CCCF3E744035A61D2BC9 /* NoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
 		1A2B3C4D5E6F708192A3B4C6 /* LaTeXInlineRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaTeXInlineRenderer.swift; sourceTree = "<group>"; };
 		1A2B3C4D5E6F708192A3B4C8 /* MathInlineAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathInlineAttachment.swift; sourceTree = "<group>"; };
+		2A2B3C4D5E6F708192A3B4C2 /* MathBoxTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathBoxTextView.swift; sourceTree = "<group>"; };
+		2A2B3C4D5E6F708192A3B4C4 /* MathEditPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathEditPopover.swift; sourceTree = "<group>"; };
 		1A2B3C4D5E6F708192A3B4CA /* NoteUnifiedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteUnifiedTextView.swift; sourceTree = "<group>"; };
 		2E74BDB8AA0D45CDB8B73E6F /* NoteDocument+Markdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NoteDocument+Markdown.swift"; sourceTree = "<group>"; };
 		F6F91698F5754A238D5A5CDE /* NoteDocument+LaTeXExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NoteDocument+LaTeXExport.swift"; sourceTree = "<group>"; };
@@ -116,6 +120,8 @@
 				84093A190E9D485EA8C8D0D2 /* NotesListView.swift */,
 				1A2B3C4D5E6F708192A3B4C8 /* MathInlineAttachment.swift */,
 				1A2B3C4D5E6F708192A3B4CA /* NoteUnifiedTextView.swift */,
+				2A2B3C4D5E6F708192A3B4C2 /* MathBoxTextView.swift */,
+				2A2B3C4D5E6F708192A3B4C4 /* MathEditPopover.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -213,6 +219,8 @@
 				1A2B3C4D5E6F708192A3B4C5 /* LaTeXInlineRenderer.swift in Sources */,
 				1A2B3C4D5E6F708192A3B4C7 /* MathInlineAttachment.swift in Sources */,
 				1A2B3C4D5E6F708192A3B4C9 /* NoteUnifiedTextView.swift in Sources */,
+				2A2B3C4D5E6F708192A3B4C1 /* MathBoxTextView.swift in Sources */,
+				2A2B3C4D5E6F708192A3B4C3 /* MathEditPopover.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
