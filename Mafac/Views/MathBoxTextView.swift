@@ -51,6 +51,10 @@ final class MathBoxTextView: NSTextView {
     /// see its doc comment for why there's no separate discard gesture).
     var onCancelKey: (() -> Void)?
 
+    /// Fired after every content change — MathEditPopover uses it to grow
+    /// the popover so a long expression stays visible while it's typed.
+    var onTextChanged: (() -> Void)?
+
     var shortcutTable: ShortcutTable? {
         didSet {
             hasLeaderEntries = shortcutTable?.entries.contains { $0.tier == .leader } ?? false
@@ -81,8 +85,17 @@ final class MathBoxTextView: NSTextView {
         smartInsertDeleteEnabled = false
         isRichText = false
         allowsUndo = true
-        font = NSFont.monospacedSystemFont(ofSize: 15, weight: .regular)
+        font = NSFont.monospacedSystemFont(ofSize: 17, weight: .regular)
         textColor = .labelColor
+    }
+
+    /// Every mutation path in this view — `insertText`, shortcut
+    /// insertion, backspace over a structure, `loadExisting` — funnels
+    /// through `didChangeText()`, so overriding it here is the one place
+    /// that catches them all.
+    override func didChangeText() {
+        super.didChangeText()
+        onTextChanged?()
     }
 
     // MARK: - Keystroke interpretation
@@ -143,7 +156,7 @@ final class MathBoxTextView: NSTextView {
         let insertRange = selectedRange()
         let structureID = UUID()
         let attrs = baseAttributes(inheritingStructureAt: insertRange.location)
-        let (snippet, holeRanges) = Self.buildSnippet(for: entry.latex, typingAttributes: attrs)
+        let (snippet, holeRanges) = Self.buildSnippet(for: Self.terminated(entry.latex), typingAttributes: attrs)
 
         guard shouldChangeText(in: insertRange, replacementString: snippet.string) else { return }
 
@@ -167,6 +180,23 @@ final class MathBoxTextView: NSTextView {
         structureHoleCount[structureID] = holeRanges.count
         onShortcutUsed?(entry.id)
         selectFirstHole(in: holeRanges, offsetBy: insertRange.location, elseCaretAt: insertRange.location + snippet.length)
+    }
+
+    /// Appends the space that terminates a bare control word like
+    /// `\partial`, so that whatever the user types next can't glue itself
+    /// onto the command name — without it, `;D` followed by `y` produces
+    /// the source `\partialy`, which is a different (undefined) command
+    /// rather than ∂ applied to y. Snippets that end in a brace group
+    /// (`\frac{}{}`, `\int_{}^{}`) or punctuation (`^{}`) already
+    /// self-terminate and are returned unchanged.
+    ///
+    /// Only applied on fresh insertion, never in `buildSnippet` itself:
+    /// that is shared with `loadExisting(latex:)`, which would otherwise
+    /// append another space to an already-terminated command every time a
+    /// box is reopened.
+    private static func terminated(_ latex: String) -> String {
+        guard latex.hasPrefix("\\"), let last = latex.last, last.isLetter else { return latex }
+        return latex + " "
     }
 
     /// Parses a latex snippet (e.g. "\frac{}{}" from a fresh
@@ -227,7 +257,7 @@ final class MathBoxTextView: NSTextView {
     /// with the structure it belongs to.
     private func baseAttributes(inheritingStructureAt location: Int) -> [NSAttributedString.Key: Any] {
         var attrs: [NSAttributedString.Key: Any] = [
-            .font: font ?? NSFont.monospacedSystemFont(ofSize: 15, weight: .regular),
+            .font: font ?? NSFont.monospacedSystemFont(ofSize: 17, weight: .regular),
             .foregroundColor: NSColor.labelColor
         ]
         if let storage = textStorage, let structID = structureContainingOpenHole(at: location, storage: storage) {
@@ -419,7 +449,7 @@ final class MathBoxTextView: NSTextView {
     func loadExisting(latex: String) {
         guard let storage = textStorage else { return }
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: font ?? NSFont.monospacedSystemFont(ofSize: 15, weight: .regular),
+            .font: font ?? NSFont.monospacedSystemFont(ofSize: 17, weight: .regular),
             .foregroundColor: NSColor.labelColor
         ]
         let (snippet, holeRanges) = Self.buildSnippet(for: latex, typingAttributes: attrs)

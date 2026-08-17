@@ -1,66 +1,6 @@
 {
-  "version": 1,
+  "version": 2,
   "entries": [
-    {
-      "id": "root",
-      "trigger": "r",
-      "tier": 1,
-      "category": "structure",
-      "latex": "\\sqrt{}",
-      "symbol": "√",
-      "holeBehavior": "single",
-      "mnemonic": "r = root"
-    },
-    {
-      "id": "integral",
-      "trigger": "i",
-      "tier": 1,
-      "category": "calculus",
-      "latex": "\\int_{}^{}",
-      "symbol": "∫",
-      "holeBehavior": "double",
-      "mnemonic": "i = integral; holes are the lower/upper bounds, integrand is typed after exiting the holes"
-    },
-    {
-      "id": "sum",
-      "trigger": "s",
-      "tier": 1,
-      "category": "calculus",
-      "latex": "\\sum_{}^{}",
-      "symbol": "Σ",
-      "holeBehavior": "double",
-      "mnemonic": "s = sum; holes are the lower/upper bounds"
-    },
-    {
-      "id": "pi",
-      "trigger": "p",
-      "tier": 1,
-      "category": "constant",
-      "latex": "\\pi",
-      "symbol": "π",
-      "holeBehavior": "none",
-      "mnemonic": "p = pi"
-    },
-    {
-      "id": "infinity",
-      "trigger": "8",
-      "tier": 1,
-      "category": "constant",
-      "latex": "\\infty",
-      "symbol": "∞",
-      "holeBehavior": "none",
-      "mnemonic": "8 = sideways figure-eight looks like the infinity symbol"
-    },
-    {
-      "id": "fraction",
-      "trigger": "f",
-      "tier": 1,
-      "category": "structure",
-      "latex": "\\frac{}{}",
-      "symbol": "a/b",
-      "holeBehavior": "double",
-      "mnemonic": "f = fraction; first hole is numerator, second is denominator"
-    },
     {
       "id": "superscript",
       "trigger": "^",
@@ -82,76 +22,6 @@
       "mnemonic": "_ is the literal LaTeX subscript operator, so it types itself"
     },
     {
-      "id": "leq",
-      "trigger": "<",
-      "tier": 1,
-      "category": "relation",
-      "latex": "\\leq",
-      "symbol": "≤",
-      "holeBehavior": "none",
-      "mnemonic": "< is the base less-than key; ≤ is its \"or equal\" cousin"
-    },
-    {
-      "id": "geq",
-      "trigger": ">",
-      "tier": 1,
-      "category": "relation",
-      "latex": "\\geq",
-      "symbol": "≥",
-      "holeBehavior": "none",
-      "mnemonic": "> is the base greater-than key; ≥ is its \"or equal\" cousin"
-    },
-    {
-      "id": "to",
-      "trigger": "-",
-      "tier": 1,
-      "category": "relation",
-      "latex": "\\to",
-      "symbol": "→",
-      "holeBehavior": "none",
-      "mnemonic": "- is the dash you'd type to start drawing \"->\" by hand"
-    },
-    {
-      "id": "neq",
-      "trigger": "n",
-      "tier": 1,
-      "category": "relation",
-      "latex": "\\neq",
-      "symbol": "≠",
-      "holeBehavior": "none",
-      "mnemonic": "n = not (equal)"
-    },
-    {
-      "id": "pm",
-      "trigger": "m",
-      "tier": 1,
-      "category": "operator",
-      "latex": "\\pm",
-      "symbol": "±",
-      "holeBehavior": "none",
-      "mnemonic": "m = second letter of \"pm\" (p is already taken by pi)"
-    },
-    {
-      "id": "times",
-      "trigger": "x",
-      "tier": 1,
-      "category": "operator",
-      "latex": "\\times",
-      "symbol": "×",
-      "holeBehavior": "none",
-      "mnemonic": "x is visually identical to the multiplication sign ×"
-    },
-    {
-      "id": "div",
-      "trigger": "/",
-      "tier": 1,
-      "category": "operator",
-      "latex": "\\div",
-      "symbol": "÷",
-      "holeBehavior": "none",
-      "mnemonic": "/ is the slash that sits inside the division sign ÷"
-    },
-    {
       "id": "approx",
       "trigger": "~",
       "tier": 1,
@@ -159,127 +29,277 @@
       "latex": "\\approx",
       "symbol": "≈",
       "holeBehavior": "none",
-      "mnemonic": "~ (tilde) is visually one of the two wavy bars in ≈"
+      "mnemonic": "~ (tilde) is visually one of the two wavy bars in ≈, and a literal tilde is never needed in math"
     },
     {
-      "id": "in",
-      "trigger": "e",
-      "tier": 1,
-      "category": "relation",
-      "latex": "\\in",
-      "symbol": "∈",
-      "holeBehavior": "none",
-      "mnemonic": "e = element of"
-    },
-    {
-      "id": "alpha",
-      "trigger": "a",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\alpha",
-      "symbol": "α",
-      "holeBehavior": "none",
-      "mnemonic": "a = alpha"
-    },
-    {
-      "id": "beta",
-      "trigger": "b",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\beta",
-      "symbol": "β",
-      "holeBehavior": "none",
-      "mnemonic": "b = beta"
-    },
-    {
-      "id": "gamma",
-      "trigger": "g",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\gamma",
-      "symbol": "γ",
-      "holeBehavior": "none",
-      "mnemonic": "g = gamma"
-    },
-    {
-      "id": "delta",
-      "trigger": "d",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\delta",
-      "symbol": "δ",
-      "holeBehavior": "none",
-      "mnemonic": "d = delta"
-    },
-    {
-      "id": "theta",
-      "trigger": "t",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\theta",
-      "symbol": "θ",
-      "holeBehavior": "none",
-      "mnemonic": "t = theta (\"th\" sound)"
-    },
-    {
-      "id": "lambda",
-      "trigger": "l",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\lambda",
-      "symbol": "λ",
-      "holeBehavior": "none",
-      "mnemonic": "l = lambda"
-    },
-    {
-      "id": "mu",
-      "trigger": "u",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\mu",
-      "symbol": "μ",
-      "holeBehavior": "none",
-      "mnemonic": "u = second letter of \"mu\" (m is already taken by ±)"
-    },
-    {
-      "id": "omega",
-      "trigger": "o",
-      "tier": 1,
-      "category": "greek",
-      "latex": "\\omega",
-      "symbol": "ω",
-      "holeBehavior": "none",
-      "mnemonic": "o = omega"
-    },
-    {
-      "id": "forall",
+      "id": "fraction",
       "trigger": ";f",
       "tier": 2,
-      "category": "logic",
-      "latex": "\\forall",
-      "symbol": "∀",
-      "holeBehavior": "none",
-      "mnemonic": "leader ; + f = \"for all\" (plain f is already taken by fraction)"
+      "category": "structure",
+      "latex": "\\frac{}{}",
+      "symbol": "a/b",
+      "holeBehavior": "double",
+      "mnemonic": "; + f = fraction; first hole is numerator, second is denominator"
     },
     {
-      "id": "exists",
-      "trigger": ";e",
+      "id": "root",
+      "trigger": ";R",
       "tier": 2,
-      "category": "logic",
-      "latex": "\\exists",
-      "symbol": "∃",
-      "holeBehavior": "none",
-      "mnemonic": "leader ; + e = exists (plain e is already taken by \\in)"
+      "category": "structure",
+      "latex": "\\sqrt{}",
+      "symbol": "√",
+      "holeBehavior": "single",
+      "mnemonic": "; + capital R = Root (lowercase ;r is rho)"
+    },
+    {
+      "id": "integral",
+      "trigger": ";i",
+      "tier": 2,
+      "category": "calculus",
+      "latex": "\\int_{}^{}",
+      "symbol": "∫",
+      "holeBehavior": "double",
+      "mnemonic": "; + i = integral; holes are the lower/upper bounds, integrand is typed after exiting the holes"
+    },
+    {
+      "id": "sum",
+      "trigger": ";s",
+      "tier": 2,
+      "category": "calculus",
+      "latex": "\\sum_{}^{}",
+      "symbol": "Σ",
+      "holeBehavior": "double",
+      "mnemonic": "; + s = sum; holes are the lower/upper bounds"
     },
     {
       "id": "product",
-      "trigger": ";p",
+      "trigger": ";P",
       "tier": 2,
       "category": "calculus",
       "latex": "\\prod_{}^{}",
       "symbol": "∏",
       "holeBehavior": "double",
-      "mnemonic": "leader ; + p = product, capital-Pi sibling of sum (plain p is already taken by pi)"
+      "mnemonic": "; + capital P = product ∏, the capital-Pi sibling of ;p = π"
+    },
+    {
+      "id": "partial",
+      "trigger": ";D",
+      "tier": 2,
+      "category": "calculus",
+      "latex": "\\partial",
+      "symbol": "∂",
+      "holeBehavior": "none",
+      "mnemonic": "; + capital D = partial ∂, the 'curly d' of calculus (lowercase ;d is delta)"
+    },
+    {
+      "id": "pi",
+      "trigger": ";p",
+      "tier": 2,
+      "category": "constant",
+      "latex": "\\pi",
+      "symbol": "π",
+      "holeBehavior": "none",
+      "mnemonic": "; + p = pi"
+    },
+    {
+      "id": "infinity",
+      "trigger": ";8",
+      "tier": 2,
+      "category": "constant",
+      "latex": "\\infty",
+      "symbol": "∞",
+      "holeBehavior": "none",
+      "mnemonic": "; + 8 = sideways figure-eight looks like ∞ (bare 8 stays typeable as the digit)"
+    },
+    {
+      "id": "leq",
+      "trigger": ";<",
+      "tier": 2,
+      "category": "relation",
+      "latex": "\\leq",
+      "symbol": "≤",
+      "holeBehavior": "none",
+      "mnemonic": "; + < = its 'or equal' cousin (bare < stays typeable as strict less-than)"
+    },
+    {
+      "id": "geq",
+      "trigger": ";>",
+      "tier": 2,
+      "category": "relation",
+      "latex": "\\geq",
+      "symbol": "≥",
+      "holeBehavior": "none",
+      "mnemonic": "; + > = its 'or equal' cousin (bare > stays typeable as strict greater-than)"
+    },
+    {
+      "id": "to",
+      "trigger": ";-",
+      "tier": 2,
+      "category": "relation",
+      "latex": "\\to",
+      "symbol": "→",
+      "holeBehavior": "none",
+      "mnemonic": "; + - = the dash you'd type to start drawing '->' (bare - stays typeable as minus)"
+    },
+    {
+      "id": "neq",
+      "trigger": ";n",
+      "tier": 2,
+      "category": "relation",
+      "latex": "\\neq",
+      "symbol": "≠",
+      "holeBehavior": "none",
+      "mnemonic": "; + n = not (equal)"
+    },
+    {
+      "id": "in",
+      "trigger": ";e",
+      "tier": 2,
+      "category": "relation",
+      "latex": "\\in",
+      "symbol": "∈",
+      "holeBehavior": "none",
+      "mnemonic": "; + e = element of"
+    },
+    {
+      "id": "pm",
+      "trigger": ";m",
+      "tier": 2,
+      "category": "operator",
+      "latex": "\\pm",
+      "symbol": "±",
+      "holeBehavior": "none",
+      "mnemonic": "; + m = second letter of 'pm' (;p is already taken by pi)"
+    },
+    {
+      "id": "times",
+      "trigger": ";x",
+      "tier": 2,
+      "category": "operator",
+      "latex": "\\times",
+      "symbol": "×",
+      "holeBehavior": "none",
+      "mnemonic": "; + x is visually identical to the multiplication sign × (bare x stays typeable as a variable)"
+    },
+    {
+      "id": "div",
+      "trigger": ";/",
+      "tier": 2,
+      "category": "operator",
+      "latex": "\\div",
+      "symbol": "÷",
+      "holeBehavior": "none",
+      "mnemonic": "; + / is the slash that sits inside the division sign ÷ (bare / stays typeable)"
+    },
+    {
+      "id": "forall",
+      "trigger": ";A",
+      "tier": 2,
+      "category": "logic",
+      "latex": "\\forall",
+      "symbol": "∀",
+      "holeBehavior": "none",
+      "mnemonic": "; + capital A = ∀, an upside-down A, for 'for all'"
+    },
+    {
+      "id": "exists",
+      "trigger": ";E",
+      "tier": 2,
+      "category": "logic",
+      "latex": "\\exists",
+      "symbol": "∃",
+      "holeBehavior": "none",
+      "mnemonic": "; + capital E = ∃, a mirrored E, for 'there exists'"
+    },
+    {
+      "id": "alpha",
+      "trigger": ";a",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\alpha",
+      "symbol": "α",
+      "holeBehavior": "none",
+      "mnemonic": "; + a = alpha"
+    },
+    {
+      "id": "beta",
+      "trigger": ";b",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\beta",
+      "symbol": "β",
+      "holeBehavior": "none",
+      "mnemonic": "; + b = beta"
+    },
+    {
+      "id": "gamma",
+      "trigger": ";g",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\gamma",
+      "symbol": "γ",
+      "holeBehavior": "none",
+      "mnemonic": "; + g = gamma"
+    },
+    {
+      "id": "delta",
+      "trigger": ";d",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\delta",
+      "symbol": "δ",
+      "holeBehavior": "none",
+      "mnemonic": "; + d = delta"
+    },
+    {
+      "id": "theta",
+      "trigger": ";t",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\theta",
+      "symbol": "θ",
+      "holeBehavior": "none",
+      "mnemonic": "; + t = theta ('th' sound)"
+    },
+    {
+      "id": "lambda",
+      "trigger": ";l",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\lambda",
+      "symbol": "λ",
+      "holeBehavior": "none",
+      "mnemonic": "; + l = lambda"
+    },
+    {
+      "id": "mu",
+      "trigger": ";u",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\mu",
+      "symbol": "μ",
+      "holeBehavior": "none",
+      "mnemonic": "; + u = second letter of 'mu' (;m is already taken by ±)"
+    },
+    {
+      "id": "omega",
+      "trigger": ";o",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\omega",
+      "symbol": "ω",
+      "holeBehavior": "none",
+      "mnemonic": "; + o = omega"
+    },
+    {
+      "id": "rho",
+      "trigger": ";r",
+      "tier": 2,
+      "category": "greek",
+      "latex": "\\rho",
+      "symbol": "ρ",
+      "holeBehavior": "none",
+      "mnemonic": "; + r = rho"
     }
   ]
 }

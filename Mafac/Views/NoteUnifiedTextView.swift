@@ -22,7 +22,14 @@ import AppKit
 
 final class NoteUnifiedTextView: NSTextView {
 
-    static let baseFont = NSFont.systemFont(ofSize: 17)
+    static let baseFont = NSFont.systemFont(ofSize: 20)
+
+    /// The one font/color pair every character in the note carries. Kept
+    /// in one place because it has to be re-applied after edits — see
+    /// `normalizeAttributes()`.
+    static var baseAttributes: [NSAttributedString.Key: Any] {
+        [.font: baseFont, .foregroundColor: NSColor.textColor]
+    }
 
     /// Fired after any edit — typing, or a math expression being
     /// inserted/updated/removed — with the note's current content
@@ -60,14 +67,46 @@ final class NoteUnifiedTextView: NSTextView {
         allowsUndo = true
         font = Self.baseFont
         textColor = .textColor
-        typingAttributes = [.font: Self.baseFont, .foregroundColor: NSColor.textColor]
+        typingAttributes = Self.baseAttributes
     }
 
     // MARK: - Loading / reading the document
 
     func setBlocks(_ blocks: [NoteBlock]) {
         textStorage?.setAttributedString(Self.attributedString(from: blocks))
-        typingAttributes = [.font: Self.baseFont, .foregroundColor: NSColor.textColor]
+        normalizeAttributes()
+    }
+
+    /// Re-stamps the note's font and colour across the whole storage.
+    ///
+    /// An `NSTextAttachment` string carries no attributes of its own, so
+    /// the moment a math expression is inserted, the character after it
+    /// has neither `.font` nor `.foregroundColor` — and NSLayoutManager
+    /// draws attribute-less text as plain black, which is invisible on a
+    /// dark background and unfixable by typing, because every following
+    /// keystroke inherits the same empty attributes. Re-applying the base
+    /// attributes after every edit (and resetting `typingAttributes`, so
+    /// the caret itself is correct before the next keystroke) keeps the
+    /// note in one consistent style no matter what was inserted.
+    private func normalizeAttributes() {
+        guard let storage = textStorage else { return }
+        if storage.length > 0 {
+            // Collect first, mutate after: only genuinely mis-styled runs
+            // are touched, so an ordinary keystroke doesn't invalidate
+            // layout for the entire note.
+            var dirty: [NSRange] = []
+            storage.enumerateAttributes(in: NSRange(location: 0, length: storage.length), options: []) { attrs, range, _ in
+                let fontMatches = (attrs[.font] as? NSFont) == Self.baseFont
+                let colorMatches = (attrs[.foregroundColor] as? NSColor) == NSColor.textColor
+                if !fontMatches || !colorMatches { dirty.append(range) }
+            }
+            if !dirty.isEmpty {
+                storage.beginEditing()
+                for range in dirty { storage.addAttributes(Self.baseAttributes, range: range) }
+                storage.endEditing()
+            }
+        }
+        typingAttributes = Self.baseAttributes
     }
 
     /// Re-derives `[NoteBlock]` from the live text storage: each
@@ -102,23 +141,32 @@ final class NoteUnifiedTextView: NSTextView {
 
     private static func attributedString(from blocks: [NoteBlock]) -> NSAttributedString {
         let result = NSMutableAttributedString()
-        let attrs: [NSAttributedString.Key: Any] = [.font: baseFont, .foregroundColor: NSColor.textColor]
         for block in blocks {
             switch block.content {
             case .text(let text):
-                result.append(NSAttributedString(string: text, attributes: attrs))
+                result.append(NSAttributedString(string: text, attributes: baseAttributes))
             case .math(let latex):
-                result.append(NSAttributedString(attachment: MathInlineAttachment(blockID: block.id, latex: latex)))
+                result.append(attachmentString(MathInlineAttachment(blockID: block.id, latex: latex)))
             }
         }
         if result.length == 0 {
-            result.append(NSAttributedString(string: "", attributes: attrs))
+            result.append(NSAttributedString(string: "", attributes: baseAttributes))
         }
+        return result
+    }
+
+    /// A math attachment as an attributed string carrying the note's own
+    /// font/colour, so the characters typed after it inherit a real style
+    /// instead of the attachment's empty attribute set.
+    private static func attachmentString(_ attachment: MathInlineAttachment) -> NSAttributedString {
+        let result = NSMutableAttributedString(attachment: attachment)
+        result.addAttributes(baseAttributes, range: NSRange(location: 0, length: result.length))
         return result
     }
 
     override func didChangeText() {
         super.didChangeText()
+        normalizeAttributes()
         onBlocksChanged?(currentBlocks())
     }
 
@@ -139,7 +187,7 @@ final class NoteUnifiedTextView: NSTextView {
         let blockID = UUID()
         let placeholder = MathInlineAttachment(blockID: blockID, latex: "")
         storage.beginEditing()
-        storage.replaceCharacters(in: range, with: NSAttributedString(attachment: placeholder))
+        storage.replaceCharacters(in: range, with: Self.attachmentString(placeholder))
         storage.endEditing()
         didChangeText()
         presentMathPopover(for: placeholder, at: range.location)
@@ -202,7 +250,7 @@ final class NoteUnifiedTextView: NSTextView {
         if trimmed.isEmpty {
             storage.replaceCharacters(in: range, with: "")
         } else {
-            storage.replaceCharacters(in: range, with: NSAttributedString(attachment: MathInlineAttachment(blockID: blockID, latex: trimmed)))
+            storage.replaceCharacters(in: range, with: Self.attachmentString(MathInlineAttachment(blockID: blockID, latex: trimmed)))
         }
         storage.endEditing()
         didChangeText()

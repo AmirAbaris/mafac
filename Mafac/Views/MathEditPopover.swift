@@ -22,6 +22,13 @@ final class MathEditPopover: NSObject, NSPopoverDelegate {
     private let boxTextView = MathBoxTextView()
     private var onCommit: ((String) -> Void)?
     private var didCommit = false
+    private var scrollView: NSScrollView?
+
+    /// The popover starts at `minSize` and grows with the expression up to
+    /// `maxSize`, past which the box scrolls instead — without a ceiling a
+    /// long expression would grow the popover taller than the window.
+    private static let minSize = NSSize(width: 280, height: 44)
+    private static let maxSize = NSSize(width: 620, height: 260)
 
     func show(
         anchoredTo rect: NSRect,
@@ -55,17 +62,59 @@ final class MathEditPopover: NSObject, NSPopoverDelegate {
         scrollView.hasHorizontalScroller = false
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
+        self.scrollView = scrollView
 
         let contentController = NSViewController()
         contentController.view = scrollView
         popover.contentViewController = contentController
-        popover.contentSize = NSSize(width: 240, height: 40)
         popover.behavior = .transient
         popover.delegate = self
+
+        boxTextView.onTextChanged = { [weak self] in self?.resizeToFit() }
+        // Sizes the popover to `initialLatex` before it's ever shown, so
+        // reopening a long expression doesn't start cramped and then jump.
+        resizeToFit()
 
         popover.show(relativeTo: rect, of: view, preferredEdge: .maxY)
         view.window?.makeFirstResponder(boxTextView)
         boxTextView.selectFirstHoleOrEnd(hadInitialContent: !initialLatex.isEmpty)
+    }
+
+    /// Grows the popover to fit what's been typed: wider as a single line
+    /// lengthens, then taller once it hits the width cap and starts
+    /// wrapping, then scrolling once it hits the height cap too.
+    private func resizeToFit() {
+        guard let storage = boxTextView.textStorage else { return }
+        let inset = boxTextView.textContainerInset
+        // Insets on both sides, plus a little slack so the caret sitting
+        // past the last glyph doesn't land hard against the edge.
+        let chrome = NSSize(width: inset.width * 2 + 6, height: inset.height * 2 + 4)
+
+        let natural = storage.size().width + chrome.width
+        let width = min(max(Self.minSize.width, natural.rounded(.up)), Self.maxSize.width)
+
+        // Measured off the attributed string rather than the live layout
+        // manager: asking the real text container to re-measure mid-edit
+        // would fight `widthTracksTextView` and disturb the layout the
+        // user is currently typing into.
+        let bounding = storage.boundingRect(
+            with: NSSize(width: width - chrome.width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading]
+        )
+        let height = min(
+            max(Self.minSize.height, (bounding.height + chrome.height).rounded(.up)),
+            Self.maxSize.height
+        )
+
+        let size = NSSize(width: width, height: height)
+        if size != popover.contentSize {
+            popover.contentSize = size
+            scrollView?.hasVerticalScroller = height >= Self.maxSize.height
+        }
+        // Runs even when the size didn't change — that's exactly the
+        // capped case, where the caret is the thing that would otherwise
+        // scroll out of sight.
+        boxTextView.scrollRangeToVisible(boxTextView.selectedRange())
     }
 
     /// Re-triggering ⌘M / the toolbar button while this popover is

@@ -43,12 +43,20 @@ final class MathInlineAttachment: NSTextAttachment {
         refreshImage()
     }
 
-    private static let font = NSFont.systemFont(ofSize: 18)
+    private static let font = NSFont.systemFont(ofSize: 21)
     private static let padding = NSSize(width: 6, height: 4)
 
     private func refreshImage() {
+        // This image is rasterized once and then cached, so the dynamic
+        // system colours have to be flattened against the app's *current*
+        // appearance up front — leaving them dynamic means whichever
+        // appearance happens to be current when the drawing handler runs
+        // decides the colour, which is how a dark-mode note ends up with
+        // black-on-black math.
+        let (glyphColor, boxColor) = Self.resolvedColors()
+
         let display = latex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "▢" : latex
-        let attributed = LaTeXInlineRenderer.render(display, font: Self.font, color: .textColor)
+        let attributed = LaTeXInlineRenderer.render(display, font: Self.font, color: glyphColor)
         var size = attributed.size()
         size.width += Self.padding.width * 2
         size.height += Self.padding.height * 2
@@ -56,7 +64,7 @@ final class MathInlineAttachment: NSTextAttachment {
         size.height = max(size.height, 20)
 
         let image = NSImage(size: size, flipped: false) { rect in
-            NSColor.textBackgroundColor.withAlphaComponent(0.6).setFill()
+            boxColor.withAlphaComponent(0.6).setFill()
             let backgroundPath = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 5, yRadius: 5)
             backgroundPath.fill()
             NSColor.gray.withAlphaComponent(0.35).setStroke()
@@ -71,5 +79,17 @@ final class MathInlineAttachment: NSTextAttachment {
 
         let baselineDrop = (size.height - Self.font.ascender + Self.font.descender) / 2
         bounds = CGRect(x: 0, y: -baselineDrop, width: size.width, height: size.height)
+    }
+
+    /// `.textColor` / `.textBackgroundColor` flattened into concrete
+    /// colours for the app's effective appearance.
+    private static func resolvedColors() -> (glyph: NSColor, box: NSColor) {
+        var glyph = NSColor.textColor
+        var box = NSColor.textBackgroundColor
+        NSApplication.shared.effectiveAppearance.performAsCurrentDrawingAppearance {
+            glyph = NSColor.textColor.usingColorSpace(.sRGB) ?? glyph
+            box = NSColor.textBackgroundColor.usingColorSpace(.sRGB) ?? box
+        }
+        return (glyph, box)
     }
 }
